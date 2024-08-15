@@ -2,49 +2,50 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
+	"os"
+	"proyecto1/Analizador"
+	"strings"
 )
 
-type Message struct {
+// Estructura para manejar la entrada JSON
+type CommandRequest struct {
 	Text string `json:"text"`
 }
 
-func main() {
-	http.HandleFunc("/api/message", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			log.Println("Received GET request")
-			message := Message{Text: "Hello from Go!"}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(message)
+// Estructura para la respuesta JSON
+type CommandResponse struct {
+	Text string `json:"text"`
+}
+
+// Handler para recibir y procesar los comandos
+func commandHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		var request CommandRequest
+		err := json.NewDecoder(r.Body).Decode(&request)
+		if err != nil {
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
 			return
 		}
 
-		if r.Method == http.MethodPost {
-			log.Println("Received POST request")
-			var message Message
-			if err := json.NewDecoder(r.Body).Decode(&message); err != nil {
-				log.Println("Error decoding JSON:", err)
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			log.Println("Received POST request with message:", message.Text)
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+		command, params := Analizador.GetCommandAndParams(request.Text)
+		var output strings.Builder
+		oldStdout := os.Stdout
+		os.Stdout = &output
+		Analizador.AnalyzeCommand(command, params)
+		os.Stdout = oldStdout
 
+		response := CommandResponse{Text: output.String()}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	} else {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-	})
-
-	// Configura CORS para permitir solicitudes desde tu frontend
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	})
-
-	log.Println("Starting server on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
 	}
+}
+
+func main() {
+	http.HandleFunc("/api/message", commandHandler)
+	fmt.Println("Server started at :8080")
+	http.ListenAndServe(":8080", nil)
 }
