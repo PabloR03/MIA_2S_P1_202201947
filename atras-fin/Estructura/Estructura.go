@@ -24,18 +24,19 @@ func PrintMBR(data MRB) {
 //  =============================================================
 
 type Partition struct {
-	Status      [1]byte
-	Type        [1]byte
-	Fit         [1]byte
 	Start       int32
-	Size        int32
-	Name        [16]byte
 	Correlative int32
-	Id          [4]byte
+	Size        int32
+	Unit        [1]byte
+	Path        [100]byte
+	Type        [1]byte
+	Fit         [2]byte
+	Name        [16]byte
+	Status      [1]byte // Puede ser '1' para activa y '0' para inactiva, según se necesite
 }
 
 func PrintPartition(data Partition) {
-	fmt.Printf("Name: %s, type: %s, start: %d, size: %d, status: %s, id: %s\n", string(data.Name[:]), string(data.Type[:]), data.Start, data.Size, string(data.Status[:]), string(data.Id[:]))
+	fmt.Printf("Start: %d, Correlative: %d, Size: %d, Unit: %s, Path: %s, Type: %s, Fit: %s, Name: %s, Status: %s\n", data.Start, data.Correlative, data.Size, string(data.Unit[:]), string(data.Path[:]), string(data.Type[:]), string(data.Fit[:]), string(data.Name[:]), string(data.Status[:]))
 }
 
 /*

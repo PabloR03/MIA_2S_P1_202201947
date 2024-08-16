@@ -38,6 +38,19 @@ func OpenFile(name string) (*os.File, error) {
 	return file, nil
 }
 
+func EliminarArchivo(nombre string) error {
+	if _, err := os.Stat(nombre); os.IsNotExist(err) {
+		fmt.Println("Error: El archivo no existe.")
+		return err
+	}
+	err := os.Remove(nombre)
+	if err != nil {
+		fmt.Println("Error al eliminar el archivo: ", err)
+		return err
+	}
+	return nil
+}
+
 // Function to Write an object in a bin file
 func WriteObject(file *os.File, data interface{}, position int64) error {
 	file.Seek(position, 0)

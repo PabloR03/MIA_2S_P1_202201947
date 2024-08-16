@@ -1,51 +1,48 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"os"
 	"proyecto1/Analizador"
-	"strings"
 )
 
-// Estructura para manejar la entrada JSON
-type CommandRequest struct {
-	Text string `json:"text"`
+func habilitarCors(respuesta *http.ResponseWriter) {
+	(*respuesta).Header().Set("Access-Control-Allow-Origin", "*")
+	(*respuesta).Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	(*respuesta).Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
 
-// Estructura para la respuesta JSON
-type CommandResponse struct {
-	Text string `json:"text"`
-}
-
-// Handler para recibir y procesar los comandos
-func commandHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		var request CommandRequest
-		err := json.NewDecoder(r.Body).Decode(&request)
+func analizarTexto(respuesta http.ResponseWriter, solicitud *http.Request) {
+	habilitarCors(&respuesta)
+	if solicitud.Method == http.MethodPost {
+		body, err := ioutil.ReadAll(solicitud.Body)
 		if err != nil {
-			http.Error(w, "Invalid request payload", http.StatusBadRequest)
+			http.Error(respuesta, "Error al leer el cuerpo de la solicitud", http.StatusInternalServerError)
 			return
 		}
-
-		command, params := Analizador.GetCommandAndParams(request.Text)
-		var output strings.Builder
-		oldStdout := os.Stdout
-		os.Stdout = &output
-		Analizador.AnalyzeCommand(command, params)
-		os.Stdout = oldStdout
-
-		response := CommandResponse{Text: output.String()}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-	} else {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		Analizador.Analizar(string(body))
+		fmt.Fprintf(respuesta, "Archivo Analizado Correctamente.")
+		return
 	}
+	http.Error(respuesta, "Método No permitido", http.StatusMethodNotAllowed)
 }
 
 func main() {
-	http.HandleFunc("/api/message", commandHandler)
-	fmt.Println("Server started at :8080")
+	http.HandleFunc("/analizar", analizarTexto)
+	fmt.Println("Servidor escuchando en el puerto 8080...")
 	http.ListenAndServe(":8080", nil)
 }
+
+/*
+import (
+	"fmt"
+	"proyecto1/Analizador"
+)
+	func main() {
+		fmt.Println("===Start===")
+		Analizador.Analizar("mkdisk -size=3000 -unit=K -path=/home/pablo03r/discosp1/prueba1.mia ")
+		fmt.Println("===End===")
+		}
+
+*/
