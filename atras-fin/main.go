@@ -7,12 +7,6 @@ import (
 	"proyecto1/Analizador"
 )
 
-func habilitarCors(respuesta *http.ResponseWriter) {
-	(*respuesta).Header().Set("Access-Control-Allow-Origin", "*")
-	(*respuesta).Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	(*respuesta).Header().Set("Access-Control-Allow-Headers", "Content-Type")
-}
-
 func analizarTexto(respuesta http.ResponseWriter, solicitud *http.Request) {
 	habilitarCors(&respuesta)
 	if solicitud.Method == http.MethodPost {
@@ -21,11 +15,20 @@ func analizarTexto(respuesta http.ResponseWriter, solicitud *http.Request) {
 			http.Error(respuesta, "Error al leer el cuerpo de la solicitud", http.StatusInternalServerError)
 			return
 		}
-		Analizador.Analizar(string(body))
-		fmt.Fprintf(respuesta, "Archivo Analizado Correctamente.")
+
+		// Obtén el resultado del análisis
+		result := Analizador.Analizar(string(body))
+
+		// Envía el resultado al frontend
+		fmt.Fprintf(respuesta, result)
 		return
 	}
 	http.Error(respuesta, "Método No permitido", http.StatusMethodNotAllowed)
+}
+
+func habilitarCors(respuesta *http.ResponseWriter) {
+	(*respuesta).Header().Set("Access-Control-Allow-Origin", "*")
+	(*respuesta).Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
 
 func main() {

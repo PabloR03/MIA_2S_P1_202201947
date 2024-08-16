@@ -1,6 +1,7 @@
 package ManejadorDisco
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math/rand"
@@ -9,59 +10,67 @@ import (
 	"time"
 )
 
-func Mkdisk(size int, fit string, unit string, path string) {
-	fmt.Println("======INICIO MKDISK======")
-	fmt.Println("Size:", size)
-	fmt.Println("Fit:", fit)
-	fmt.Println("Unit:", unit)
-	fmt.Println("Path:", path)
+func Mkdisk(size int, fit string, unit string, path string, buffer *bytes.Buffer) {
+	fmt.Fprintln(buffer, "======INICIO MKDISK======")
+	fmt.Fprintln(buffer, "Size:", size)
+	fmt.Fprintln(buffer, "Fit:", fit)
+	fmt.Fprintln(buffer, "Unit:", unit)
+	fmt.Fprintln(buffer, "Path:", path)
+
 	// Validar el tamaño (size)
 	if size <= 0 {
-		fmt.Println("Error: El tamaño debe ser mayor que 0.")
+		fmt.Fprintln(buffer, "Error: El tamaño debe ser mayor que 0.")
 		return
 	}
+
 	// Validar el ajuste (fit)
 	if fit != "bf" && fit != "wf" && fit != "ff" {
-		fmt.Println("Error: El ajuste debe ser BF, WF, o FF.")
+		fmt.Fprintln(buffer, "Error: El ajuste debe ser BF, WF, o FF.")
 		return
 	}
+
 	// Validar la unidad (unit)
 	if unit != "k" && unit != "m" {
-		fmt.Println("Error: La unidad debe ser K o M.")
+		fmt.Fprintln(buffer, "Error: La unidad debe ser K o M.")
 		return
 	}
+
 	// Validar la ruta (path)
 	if path == "" {
-		fmt.Println("Error: La ruta es obligatoria.")
+		fmt.Fprintln(buffer, "Error: La ruta es obligatoria.")
 		return
 	}
 
 	// Crear el archivo en la ruta especificada
 	err := Utilidades.CreateFile(path)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Fprintln(buffer, "Error: ", err)
 		return
 	}
+
 	// Convertir el tamaño a bytes
 	if unit == "k" {
 		size = size * 1024
 	} else {
 		size = size * 1024 * 1024
 	}
+
 	// Abrir el archivo para escritura
 	archivo, err := Utilidades.OpenFile(path)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Fprintln(buffer, "Error: ", err)
 		return
 	}
+
 	// Inicializar el archivo con ceros
 	for i := 0; i < size; i++ {
 		err := Utilidades.WriteObject(archivo, byte(0), int64(i))
 		if err != nil {
-			fmt.Println("Error: ", err)
+			fmt.Fprintln(buffer, "Error: ", err)
 			return
 		}
 	}
+
 	// Inicializar el MBR
 	var nuevo_mbr Estructura.MRB
 	nuevo_mbr.MbrSize = int32(size)
@@ -70,69 +79,81 @@ func Mkdisk(size int, fit string, unit string, path string) {
 	fechaFormateada := currentTime.Format("2006-01-02")
 	copy(nuevo_mbr.CreationDate[:], fechaFormateada)
 	copy(nuevo_mbr.Fit[:], fit)
+
 	// Escribir el MBR en el archivo
 	if err := Utilidades.WriteObject(archivo, nuevo_mbr, 0); err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Fprintln(buffer, "Error: ", err)
 		return
 	}
 	defer archivo.Close()
-	fmt.Println("Disco creado con éxito en la ruta: ", path)
-	fmt.Println("======End MKDISK======")
 
+	fmt.Fprintln(buffer, "Disco creado con éxito en la ruta: ", path)
+	fmt.Fprintln(buffer, "======End MKDISK======")
 }
 
-func Rmdisk(path string) {
-	fmt.Println("======INICIO RMDISK======")
+func Rmdisk(path string, buffer *bytes.Buffer) {
+	fmt.Fprintln(buffer, "======INICIO RMDISK======")
+
+	// Validar la ruta (path)
+	if path == "" {
+		fmt.Fprintln(buffer, "Error RMDISK: La ruta es obligatoria.")
+		return
+	}
+
+	// Eliminar el archivo en la ruta especificada
 	err := Utilidades.EliminarArchivo(path)
 	if err != nil {
-		fmt.Println("Error RMDISK: ", err)
-		return
-	}
-	if path == "" {
-		fmt.Println("Error RMDISK: La ruta es obligatoria.")
+		fmt.Fprintln(buffer, "Error RMDISK:", err)
 		return
 	}
 
-	fmt.Println("Disco eliminado con éxito en la ruta: ", path)
-	fmt.Println("======End RMDISK======")
+	fmt.Fprintln(buffer, "Disco eliminado con éxito en la ruta:", path)
+	fmt.Fprintln(buffer, "======End RMDISK======")
 }
 
-func Fdisk(size int, unit string, path string, type_ string, fit string, name string) {
-	fmt.Println("======Start FDISK======")
-	fmt.Println("-------------------------------------------------------------")
+func Fdisk(size int, unit string, path string, type_ string, fit string, name string, buffer *bytes.Buffer) {
+	fmt.Fprintln(buffer, "======Start FDISK======")
+	fmt.Fprintln(buffer, "-------------------------------------------------------------")
+	fmt.Fprintln(buffer, "Size:", size)
+	fmt.Fprintln(buffer, "Unit:", unit)
+	fmt.Fprintln(buffer, "Path:", path)
+	fmt.Fprintln(buffer, "Type:", type_)
+	fmt.Fprintln(buffer, "Fit:", fit)
+	fmt.Fprintln(buffer, "Name:", name)
+
 	// Validar el tamaño (size)
 	if size <= 0 {
-		fmt.Println("Error: Tamaño debe ser mayor que 0.")
+		fmt.Fprintln(buffer, "Error: Tamaño debe ser mayor que 0.")
 		return
 	}
 
 	// Validar la unidad (unit)
 	if unit != "b" && unit != "k" && unit != "m" {
-		fmt.Println("Error: Unidad debe ser B, K, M.")
+		fmt.Fprintln(buffer, "Error: Unidad debe ser B, K, M.")
 		return
 	}
 
 	// Validar la ruta (path)
 	if path == "" {
-		fmt.Println("Error: La ruta es obligatoria.")
+		fmt.Fprintln(buffer, "Error: La ruta es obligatoria.")
 		return
 	}
 
 	// Validar el tipo (type)
 	if type_ != "p" && type_ != "e" && type_ != "l" {
-		fmt.Println("Error: Tipo debe ser P, E, L.")
+		fmt.Fprintln(buffer, "Error: Tipo debe ser P, E, L.")
 		return
 	}
 
 	// Validar el ajuste (fit)
 	if fit != "bf" && fit != "wf" && fit != "ff" {
-		fmt.Println("Error: Ajuste debe ser BF, WF o FF")
+		fmt.Fprintln(buffer, "Error: Ajuste debe ser BF, WF o FF")
 		return
 	}
 
 	// Validar el nombre (name)
 	if name == "" {
-		fmt.Println("Error: El nombre es obligatorio.")
+		fmt.Fprintln(buffer, "Error: El nombre es obligatorio.")
 		return
 	}
 
@@ -146,11 +167,13 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 	// Abrir archivo binario
 	archivo, err := Utilidades.OpenFile(path)
 	if err != nil {
+		fmt.Fprintln(buffer, "Error al abrir el archivo:", err)
 		return
 	}
 
 	var MBRTemporalDisco Estructura.MRB
 	if err := Utilidades.ReadObject(archivo, &MBRTemporalDisco, 0); err != nil {
+		fmt.Fprintln(buffer, "Error al leer el MBR:", err)
 		return
 	}
 
@@ -163,8 +186,8 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 
 	// Validar que el tamaño de la nueva partición no exceda el espacio restante
 	if int32(size) > espacioRestante {
-		fmt.Println("Error: El tamaño de la partición excede el espacio disponible.")
-		fmt.Println("Tamaño restante disponible:", espacioRestante, "bytes")
+		fmt.Fprintln(buffer, "Error: El tamaño de la partición excede el espacio disponible.")
+		fmt.Fprintln(buffer, "Tamaño restante disponible:", espacioRestante, "bytes")
 		return
 	}
 
@@ -197,22 +220,25 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 	}
 
 	if err := Utilidades.WriteObject(archivo, MBRTemporalDisco, 0); err != nil {
+		fmt.Fprintln(buffer, "Error al escribir el MBR:", err)
 		return
 	}
 
 	var TempMBR2 Estructura.MRB
 	if err := Utilidades.ReadObject(archivo, &TempMBR2, 0); err != nil {
+		fmt.Fprintln(buffer, "Error al leer el MBR actualizado:", err)
 		return
 	}
 	Estructura.PrintMBR(TempMBR2)
 
 	defer archivo.Close()
 
-	fmt.Println("------------------")
-	fmt.Println("Tamaño del disco:", MBRTemporalDisco.MbrSize, "bytes")
-	fmt.Println("Tamaño utilizado:", espacioUsado, "bytes")
-	fmt.Println("Tamaño restante:", espacioRestante, "bytes")
-	fmt.Println("------------------")
+	fmt.Fprintln(buffer, "------------------")
+	fmt.Fprintln(buffer, "Tamaño del disco:", MBRTemporalDisco.MbrSize, "bytes")
+	fmt.Fprintln(buffer, "Tamaño utilizado:", espacioUsado, "bytes")
+	fmt.Fprintln(buffer, "Tamaño restante:", espacioRestante, "bytes")
+	fmt.Fprintln(buffer, "------------------")
 
-	fmt.Println("Partición creada con éxito en la ruta:", path)
+	fmt.Fprintln(buffer, "Partición creada con éxito en la ruta:", path)
+	fmt.Fprintln(buffer, "======End FDISK======")
 }
