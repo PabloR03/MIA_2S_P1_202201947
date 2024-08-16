@@ -2,17 +2,6 @@
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -31,6 +20,13 @@ h1 {
   margin-bottom: 20px; /* Espaciado debajo del título */
 }
 
+.text-container {
+  display: flex;
+  justify-content: space-between;
+  width: 80%; /* Ajusta el ancho del contenedor para que no ocupe toda la pantalla */
+  margin: 0 auto; /* Centra el contenedor horizontalmente */
+}
+
 textarea {
   border-radius: 4px; /* Bordes redondeados sutiles */
   border: 1px solid #444; /* Borde oscuro y sutil */
@@ -38,6 +34,18 @@ textarea {
   background-color: #222; /* Fondo oscuro */
   color: #fff; /* Texto blanco */
   font-family: monospace; /* Fuente monoespaciada */
+  resize: none; /* Desactiva el redimensionamiento manual */
+}
+
+textarea.entrada-textarea,
+textarea.salida-textarea {
+  width: 100%; /* Ocupa todo el espacio disponible en su contenedor */
+  height: 300px; /* Ajusta la altura de los cuadros de texto */
+}
+
+.entrada-container,
+.salida-container {
+  width: 48%; /* Ajusta el ancho de cada contenedor para que ocupen el espacio */
 }
 
 button {
@@ -55,15 +63,8 @@ button:hover {
   background-color: #666; /* Color de fondo del botón en hover */
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.navbar {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Espaciado entre los botones */
 }

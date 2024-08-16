@@ -53,16 +53,29 @@ function App() {
             <header className="App-header">
                 <h1>MIA Project 202201947</h1>
 
-                <div className="entrada-container">
-                    <h2 className="entrada-title">Entrada</h2>
-                    <textarea 
-                        className="entrada-textarea"
-                        value={inputText} 
-                        onChange={handleInputChange}
-                        placeholder="Escribe tu texto aquí..."
-                        rows="10"
-                        cols="100"  // Ajusta el ancho si es necesario
-                    />
+                <div className="text-container">
+                    <div className="entrada-container">
+                        <h2 className="entrada-title">Entrada</h2>
+                        <textarea 
+                            className="entrada-textarea"
+                            value={inputText} 
+                            onChange={handleInputChange}
+                            placeholder="Escribe tu texto aquí..."
+                            rows="100"
+                            cols="100"  // Ajusta el ancho si es necesario
+                        />
+                    </div>
+
+                    <div className="salida-container">
+                        <h2 className="salida-title">Salida</h2>
+                        <textarea
+                            className="salida-textarea"
+                            value={outputText}
+                            readOnly
+                            rows="100"
+                            cols="50" // Ajusta el ancho si es necesario
+                        />
+                    </div>
                 </div>
 
                 <div className="navbar">
@@ -72,17 +85,6 @@ function App() {
                     <button className="execute" onClick={handleExecute}>
                         <i className="fas fa-play"></i> Ejecutar
                     </button>
-                </div>
-
-                <div className="salida-container">
-                    <h2 className="salida-title">Salida</h2>
-                    <textarea
-                        className="salida-textarea"
-                        value={outputText}
-                        readOnly
-                        rows="10"
-                        cols="100" // Aumenta el número de columnas para igualar el ancho
-                    />
                 </div>
             </header>
         </div>

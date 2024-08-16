@@ -229,7 +229,7 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 		fmt.Fprintln(buffer, "Error al leer el MBR actualizado:", err)
 		return
 	}
-	Estructura.PrintMBR(TempMBR2)
+	Estructura.PrintMBR(TempMBR2, buffer)
 
 	defer archivo.Close()
 
