@@ -1,0 +1,25 @@
+
+mkdisk -Size=5 -unit=M -path=/home/pablo03r/discosp1/Disco1.mia
+
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco1.mia -Unit=M -name=Particion1 -size=1
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco1.mia -Unit=M -name=Particion2 -size=1
+mount -path=/home/pablo03r/discosp1/Disco1.mia -name=Particion1
+mount -path=/home/pablo03r/discosp1/Disco1.mia -name=Particion2
+
+mkdisk -Size=5 -unit=M -path=/home/pablo03r/discosp1/Disco2.mia
+
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion1 -size=1
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion2 -size=1
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion1
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion2
+
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco1.mia -Unit=M -name=Particion3 -size=1
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco1.mia -Unit=M -name=Particion4 -size=1
+mount -path=/home/pablo03r/discosp1/Disco1.mia -name=Particion3
+mount -path=/home/pablo03r/discosp1/Disco1.mia -name=Particion4
+
+
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion3 -size=1
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion4 -size=1
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion3
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion4

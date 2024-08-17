@@ -39,8 +39,8 @@ textarea {
 
 textarea.entrada-textarea,
 textarea.salida-textarea {
-  width: 100%; /* Ocupa todo el espacio disponible en su contenedor */
-  height: 300px; /* Ajusta la altura de los cuadros de texto */
+  width: 650px; /* Ocupa todo el espacio disponible en su contenedor */
+  height: 800px; /* Ajusta la altura de los cuadros de texto */
 }
 
 .entrada-container,

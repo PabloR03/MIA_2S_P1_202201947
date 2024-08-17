@@ -72,12 +72,3 @@ func ReadObject(file *os.File, data interface{}, position int64) error {
 	}
 	return nil
 }
-
-func DeleteFile(path string) error {
-	err := os.Remove(path)
-	if err != nil {
-		fmt.Println("Err DeleteFile==", err)
-		return err
-	}
-	return nil
-}

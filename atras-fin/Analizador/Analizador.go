@@ -40,6 +40,8 @@ func AnalyzeCommnad(command string, params string, buffer *bytes.Buffer) {
 		Funcion_fdisk(params, buffer)
 	} else if strings.Contains(command, "rmdisk") {
 		Funcion_rmdisk(params, buffer)
+	} else if strings.Contains(command, "mount") {
+		Funcion_mount(params, buffer)
 	}
 }
 
@@ -131,4 +133,28 @@ func Funcion_fdisk(input string, writer io.Writer) {
 		}
 	}
 	ManejadorDisco.Fdisk(*size, *unit, *path, *type_, *fit, *name, writer.(*bytes.Buffer))
+}
+
+func Funcion_mount(input string, writer io.Writer) {
+	fs := flag.NewFlagSet("mount", flag.ExitOnError)
+	ruta := fs.String("path", "", "Ruta")
+	nombre := fs.String("name", "", "Nombre")
+
+	fs.Parse(os.Args[1:])
+	matches := re.FindAllStringSubmatch(input, -1)
+
+	for _, match := range matches {
+		nombreFlag := match[1]
+		valorFlag := strings.ToLower(match[2])
+
+		valorFlag = strings.Trim(valorFlag, "\"")
+
+		switch nombreFlag {
+		case "path", "name":
+			fs.Set(nombreFlag, valorFlag)
+		default:
+			fmt.Println("Error: Parámetro no encontrado.")
+		}
+	}
+	ManejadorDisco.Mount(*ruta, *nombre, writer.(*bytes.Buffer))
 }
