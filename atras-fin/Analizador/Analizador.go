@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"proyecto1/ManejadorArchivo"
 	"proyecto1/ManejadorDisco"
 	"regexp"
 	"strings"
@@ -42,6 +43,8 @@ func AnalyzeCommnad(command string, params string, buffer *bytes.Buffer) {
 		Funcion_rmdisk(params, buffer)
 	} else if strings.Contains(command, "mount") {
 		Funcion_mount(params, buffer)
+	} else if strings.Contains(command, "mkfs") {
+		Funcion_mkfs(params, buffer)
 	}
 }
 
@@ -157,4 +160,27 @@ func Funcion_mount(input string, writer io.Writer) {
 		}
 	}
 	ManejadorDisco.Mount(*ruta, *nombre, writer.(*bytes.Buffer))
+}
+
+func Funcion_mkfs(input string, writer io.Writer) {
+	fs := flag.NewFlagSet("mkfs", flag.ExitOnError)
+	id := fs.String("id", "", "ID")
+	type_ := fs.String("type", "", "Tipo")
+	fs.Parse(os.Args[1:])
+	matches := re.FindAllStringSubmatch(input, -1)
+
+	for _, match := range matches {
+		nombreFlag := match[1]
+		valorFlag := strings.ToLower(match[2])
+
+		valorFlag = strings.Trim(valorFlag, "\"")
+
+		switch nombreFlag {
+		case "id", "type":
+			fs.Set(nombreFlag, valorFlag)
+		default:
+			fmt.Fprintf(writer, "Error: Parámetro no encontrado.\n")
+		}
+	}
+	ManejadorArchivo.Mkfs(*id, *type_, writer.(*bytes.Buffer))
 }

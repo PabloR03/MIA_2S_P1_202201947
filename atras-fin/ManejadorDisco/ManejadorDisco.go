@@ -20,9 +20,9 @@ func AgregarMountID(mountId Estructura.MountId) {
 
 func NumeroLetraMountID(path string) (numero int32, letra int32) {
 	for _, mount := range RegistroDisco {
-		if mount.MIpath == path {
-			numero = mount.MInumber
-			letra = mount.MIletter
+		if mount.MIDpath == path {
+			numero = mount.MIDnumber
+			letra = mount.MIDletter
 			return numero, letra
 		}
 	}
@@ -31,8 +31,8 @@ func NumeroLetraMountID(path string) (numero int32, letra int32) {
 
 func IncrementoNumeroMountID(path string) {
 	for i, mount := range RegistroDisco {
-		if mount.MIpath == path {
-			RegistroDisco[i].MInumber++
+		if mount.MIDpath == path {
+			RegistroDisco[i].MIDnumber++
 			break
 		}
 	}
@@ -113,9 +113,9 @@ func Mkdisk(size int, fit string, unit string, path string, buffer *bytes.Buffer
 	defer archivo.Close()
 
 	AgregarMountID(Estructura.MountId{
-		MIpath:   path,
-		MInumber: 1,
-		MIletter: int32(LetraInicial),
+		MIDpath:   path,
+		MIDnumber: 1,
+		MIDletter: int32(LetraInicial),
 	})
 	LetraInicial++
 
@@ -145,12 +145,12 @@ func Rmdisk(path string, buffer *bytes.Buffer) {
 
 func Fdisk(size int, unit string, path string, type_ string, fit string, name string, buffer *bytes.Buffer) {
 	fmt.Println("======================================= Start FDISK =======================================")
-	fmt.Println("Size:", size)
-	fmt.Println("Path:", path)
-	fmt.Println("Name:", name)
-	fmt.Println("Unit:", unit)
-	fmt.Println("Type:", type_)
-	fmt.Println("Fit:", fit)
+	fmt.Fprintln(buffer, "Size:", size)
+	fmt.Fprintln(buffer, "Path:", path)
+	fmt.Fprintln(buffer, "Name:", name)
+	fmt.Fprintln(buffer, "Unit:", unit)
+	fmt.Fprintln(buffer, "Type:", type_)
+	fmt.Fprintln(buffer, "Fit:", fit)
 
 	// ================================= VALIDACIONES =================================
 	if size <= 0 {
@@ -333,7 +333,7 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 		return
 	}
 	defer archivo.Close()
-	fmt.Println("======FIN FDISK======")
+	fmt.Println("======================================= FIN FDISK ======================================= ")
 }
 
 func Mount(ruta string, nombre string, buffer *bytes.Buffer) {
@@ -392,9 +392,9 @@ func Mount(ruta string, nombre string, buffer *bytes.Buffer) {
 	if err := Utilidades.ReadObject(archivo, &TempMBR2, 0); err != nil {
 		return
 	}
-	fmt.Println("=================================MBR=================================")
-	Estructura.PrintMBR(TempMBR2, buffer)
-	fmt.Println("=================================MBR=================================")
+	fmt.Fprintln(buffer, "=================================MBR=================================")
+	Estructura.PrintMBR(buffer, TempMBR2)
+	fmt.Fprintln(buffer, "=================================MBR=================================")
 	defer archivo.Close()
-	fmt.Fprintln(buffer, "======end Mount======")
+	fmt.Fprintln(buffer, "=======================================  End Mount =======================================  ")
 }
