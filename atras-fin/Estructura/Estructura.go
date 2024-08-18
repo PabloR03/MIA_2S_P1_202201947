@@ -5,64 +5,65 @@ import (
 	"fmt"
 )
 
-//  =============================================================
+//  =================================Estructura MRB=================================
 
 type MRB struct {
-	MbrSize      int32
-	CreationDate [10]byte
-	Signature    int32
-	Fit          [1]byte
-	Partitions   [4]Partition
+	MRBSize         int32
+	MRBCreationDate [10]byte
+	MRBSignature    int32
+	MRBFit          [1]byte
+	MRBPartitions   [4]Partition
 }
 
 func PrintMBR(data MRB, buffer *bytes.Buffer) {
-	fmt.Fprintf(buffer, "Size: %d, CreationDate: %s, Signature: %d, Fit: %s\n", data.MbrSize, string(data.CreationDate[:]), data.Signature, string(data.Fit[:]))
+	fmt.Printf("Fecha de Creación: %s, Ajuste: %s, Tamaño: %d, Identificador: %d\n",
+		string(data.MRBCreationDate[:]), string(data.MRBFit[:]), data.MRBSize, data.MRBSignature)
 	for i := 0; i < 4; i++ {
-		PrintPartition(data.Partitions[i], buffer)
+		PrintPartition(data.MRBPartitions[i], buffer)
 	}
 }
 
-//  =============================================================
+//  =================================Estructura Particion=================================
 
 type Partition struct {
-	Start       int32
-	Correlative int32
-	Size        int32
-	Unit        [1]byte
-	Path        [100]byte
-	Type        [1]byte
-	Fit         [2]byte
-	Name        [16]byte
-	Status      [1]byte // Puede ser '1' para activa y '0' para inactiva, según se necesite
-	PartId      [4]byte
+	PART_Status      [1]byte
+	PART_Type        [1]byte
+	PART_Fit         [1]byte
+	PART_Start       int32
+	PART_Size        int32
+	PART_Name        [16]byte
+	PART_Correlative int32
+	PART_Id          [4]byte
+	PART_Unit        [1]byte
+	PART_Path        [100]byte
 }
 
 func PrintPartition(data Partition, buffer *bytes.Buffer) {
-	fmt.Fprintf(buffer, "Start: %d, Correlative: %d, Size: %d, Unit: %s, Path: %s, Type: %s, Fit: %s, Name: %s, Status: %s\n",
-		data.Start, data.Correlative, data.Size, string(data.Unit[:]), string(data.Path[:]), string(data.Type[:]),
-		string(data.Fit[:]), string(data.Name[:]), string(data.Status[:]))
+	fmt.Printf("Nombre: %s, Tipo: %s, Inicio: %d, Tamaño: %d, Estado: %s, ID: %s, Ajuste: %s, Correlativo: %d\n",
+		string(data.PART_Name[:]), string(data.PART_Type[:]), data.PART_Start, data.PART_Size, string(data.PART_Status[:]),
+		string(data.PART_Id[:]), string(data.PART_Fit[:]), data.PART_Correlative)
 }
 
-//  =============================================================
+//  =================================Estructura EBR=================================
 
 type EBR struct {
-	Part_Mount [1]byte
-	Part_Fit   [1]byte
-	Part_Start int32
-	Part_Size  int32
-	Part_Next  int32
-	Part_Name  [16]byte
+	ERBMount [1]byte
+	ERBFit   [1]byte
+	ERBStart int32
+	ERBSize  int32
+	ERBNext  int32
+	ERBName  [16]byte
 }
 
 func PrintEBR(data EBR, buffer *bytes.Buffer) {
 	fmt.Fprintf(buffer, "Mount: %s, Fit: %s, Start: %d, Size: %d, Next: %d, Name: %s\n",
-		string(data.Part_Mount[:]), string(data.Part_Fit[:]), data.Part_Start, data.Part_Size, data.Part_Next, string(data.Part_Name[:]))
+		string(data.ERBMount[:]), string(data.ERBFit[:]), data.ERBStart, data.ERBSize, data.ERBNext, string(data.ERBName[:]))
 }
 
-// =============================================================
+// =================================Estuctura MountId=================================
 
 type MountId struct {
-	MIRuta   string
-	MINumero int32
-	MILetra  int32
+	MIpath   string
+	MInumber int32
+	MIletter int32
 }

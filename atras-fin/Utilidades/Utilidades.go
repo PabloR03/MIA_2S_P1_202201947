@@ -7,20 +7,19 @@ import (
 	"path/filepath"
 )
 
-// Funcion para crear un archivo binario
+// ================================= Crear Archivo =================================
 func CreateFile(name string) error {
 	// Asignar directorio
 	dir := filepath.Dir(name)
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		fmt.Println("Err CreateFile dir==", err)
+		fmt.Println("Error al crear Archivo, ya existe uno ==", err)
 		return err
 	}
-
 	// Crear archivo
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		file, err := os.Create(name)
 		if err != nil {
-			fmt.Println("Err CreateFile create==", err)
+			fmt.Println("Error al crear Archivo ==", err)
 			return err
 		}
 		defer file.Close()
@@ -28,17 +27,18 @@ func CreateFile(name string) error {
 	return nil
 }
 
-// Funcion para abrir el archivobinario en Lectura/Escritura
+// ================================= Abrir Archivo =================================
 func OpenFile(name string) (*os.File, error) {
 	file, err := os.OpenFile(name, os.O_RDWR, 0644)
 	if err != nil {
-		fmt.Println("Err OpenFile==", err)
+		fmt.Println("Error Abrir Archivo ==", err)
 		return nil, err
 	}
 	return file, nil
 }
 
-func EliminarArchivo(nombre string) error {
+// ================================= Eliminar Archivo =================================
+func DeleteFile(nombre string) error {
 	if _, err := os.Stat(nombre); os.IsNotExist(err) {
 		fmt.Println("Error: El archivo no existe.")
 		return err
@@ -51,23 +51,23 @@ func EliminarArchivo(nombre string) error {
 	return nil
 }
 
-// Function to Write an object in a bin file
+// ================================= Escribir Objeto =================================
 func WriteObject(file *os.File, data interface{}, position int64) error {
 	file.Seek(position, 0)
 	err := binary.Write(file, binary.LittleEndian, data)
 	if err != nil {
-		fmt.Println("Err WriteObject==", err)
+		fmt.Println("Error Escriir Objeto ==", err)
 		return err
 	}
 	return nil
 }
 
-// Function to Read an object from a bin file
+// ================================= Leer Objeto =================================
 func ReadObject(file *os.File, data interface{}, position int64) error {
 	file.Seek(position, 0)
 	err := binary.Read(file, binary.LittleEndian, data)
 	if err != nil {
-		fmt.Println("Err ReadObject==", err)
+		fmt.Println("Error al leer objeto ==", err)
 		return err
 	}
 	return nil

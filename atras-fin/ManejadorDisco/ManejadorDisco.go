@@ -12,7 +12,7 @@ import (
 )
 
 var RegistroDisco []Estructura.MountId
-var LetraInicial = 64
+var LetraInicial = 65
 
 func AgregarMountID(mountId Estructura.MountId) {
 	RegistroDisco = append(RegistroDisco, mountId)
@@ -20,9 +20,9 @@ func AgregarMountID(mountId Estructura.MountId) {
 
 func NumeroLetraMountID(path string) (numero int32, letra int32) {
 	for _, mount := range RegistroDisco {
-		if mount.MIRuta == path {
-			numero = mount.MINumero
-			letra = mount.MILetra
+		if mount.MIpath == path {
+			numero = mount.MInumber
+			letra = mount.MIletter
 			return numero, letra
 		}
 	}
@@ -31,66 +31,63 @@ func NumeroLetraMountID(path string) (numero int32, letra int32) {
 
 func IncrementoNumeroMountID(path string) {
 	for i, mount := range RegistroDisco {
-		if mount.MIRuta == path {
-			RegistroDisco[i].MINumero++
+		if mount.MIpath == path {
+			RegistroDisco[i].MInumber++
 			break
 		}
 	}
 }
 
 func Mkdisk(size int, fit string, unit string, path string, buffer *bytes.Buffer) {
-	fmt.Fprintln(buffer, "======INICIO MKDISK======")
+	fmt.Fprintln(buffer, "=======================================INICIO MKDISK=======================================")
 	fmt.Fprintln(buffer, "Size:", size)
 	fmt.Fprintln(buffer, "Fit:", fit)
 	fmt.Fprintln(buffer, "Unit:", unit)
 	fmt.Fprintln(buffer, "Path:", path)
 
-	// Validar el tamaño (size)
+	// ================================= VALIDACIONES =================================
 	if size <= 0 {
 		fmt.Fprintln(buffer, "Error: El tamaño debe ser mayor que 0.")
 		return
 	}
 
-	// Validar el fit (fit)
 	if fit != "bf" && fit != "wf" && fit != "ff" {
 		fmt.Fprintln(buffer, "Error: El fit debe ser BF, WF, o FF.")
 		return
 	}
 
-	// Validar la unit (unit)
 	if unit != "k" && unit != "m" {
 		fmt.Fprintln(buffer, "Error: La unit debe ser K o M.")
 		return
 	}
 
-	// Validar la path (path)
 	if path == "" {
 		fmt.Fprintln(buffer, "Error: La path es obligatoria.")
 		return
 	}
 
-	// Crear el archivo en la path especificada
 	err := Utilidades.CreateFile(path)
+
 	if err != nil {
 		fmt.Fprintln(buffer, "Error: ", err)
 		return
 	}
 
-	// Convertir el tamaño a bytes
 	if unit == "k" {
 		size = size * 1024
 	} else {
 		size = size * 1024 * 1024
 	}
 
-	// Abrir el archivo para escritura
+	// ================================= ABRIR ARCHIVO =================================
 	archivo, err := Utilidades.OpenFile(path)
+
 	if err != nil {
 		fmt.Fprintln(buffer, "Error: ", err)
 		return
 	}
 
-	// Inicializar el archivo con ceros
+	// ================================= inicializar el archivo con 0
 	for i := 0; i < size; i++ {
 		err := Utilidades.WriteObject(archivo, byte(0), int64(i))
 		if err != nil {
@@ -99,55 +96,55 @@ func Mkdisk(size int, fit string, unit string, path string, buffer *bytes.Buffer
 		}
 	}
 
-	// Inicializar el MBR
+	// ================================= Inicializar el MBR
 	var nuevo_mbr Estructura.MRB
-	nuevo_mbr.MbrSize = int32(size)
-	nuevo_mbr.Signature = rand.Int31()
+	nuevo_mbr.MRBSize = int32(size)
+	nuevo_mbr.MRBSignature = rand.Int31()
 	currentTime := time.Now()
 	fechaFormateada := currentTime.Format("2006-01-02")
-	copy(nuevo_mbr.CreationDate[:], fechaFormateada)
-	copy(nuevo_mbr.Fit[:], fit)
+	copy(nuevo_mbr.MRBCreationDate[:], fechaFormateada)
+	copy(nuevo_mbr.MRBFit[:], fit)
 
-	// Escribir el MBR en el archivo
+	// ================================= Escribir el MBR en el archivo
 	if err := Utilidades.WriteObject(archivo, nuevo_mbr, 0); err != nil {
 		fmt.Fprintln(buffer, "Error: ", err)
 		return
 	}
 	defer archivo.Close()
 
-	LetraInicial++
 	AgregarMountID(Estructura.MountId{
-		MIRuta:   path,
-		MINumero: 1,
-		MILetra:  int32(LetraInicial),
+		MIpath:   path,
+		MInumber: 1,
+		MIletter: int32(LetraInicial),
 	})
+	LetraInicial++
 
 	fmt.Fprintln(buffer, "Disco creado con éxito en la path: ", path)
-	fmt.Fprintln(buffer, "======End MKDISK======")
+	fmt.Fprintln(buffer, "=======================================End MKDISK=======================================")
 }
 
 func Rmdisk(path string, buffer *bytes.Buffer) {
-	fmt.Fprintln(buffer, "======INICIO RMDISK======")
+	fmt.Fprintln(buffer, "=======================================INICIO RMDISK=======================================")
 
-	// Validar la path (path)
+	// ================================= Validar la path (path)
 	if path == "" {
 		fmt.Fprintln(buffer, "Error RMDISK: La path es obligatoria.")
 		return
 	}
 
-	// Eliminar el archivo en la path especificada
-	err := Utilidades.EliminarArchivo(path)
+	// ================================= Eliminar el archivo en la path especificada
+	err := Utilidades.DeleteFile(path)
 	if err != nil {
 		fmt.Fprintln(buffer, "Error RMDISK:", err)
 		return
 	}
 
 	fmt.Fprintln(buffer, "Disco eliminado con éxito en la path:", path)
-	fmt.Fprintln(buffer, "======End RMDISK======")
+	fmt.Fprintln(buffer, "=======================================End RMDISK=======================================")
 }
 
 func Fdisk(size int, unit string, path string, type_ string, fit string, name string, buffer *bytes.Buffer) {
-	fmt.Println("======Start FDISK======")
+	fmt.Println("======================================= Start FDISK =======================================")
 	fmt.Println("Size:", size)
 	fmt.Println("Path:", path)
 	fmt.Println("Name:", name)
@@ -155,57 +152,58 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 	fmt.Println("Type:", type_)
 	fmt.Println("Fit:", fit)
 
-	// Validar el tamaño (size)
+	// ================================= VALIDACIONES =================================
 	if size <= 0 {
 		fmt.Println("Error: Tamaño debe ser mayor que 0.")
 		return
 	}
-	// Validar la unit (unit)
+
 	if unit != "b" && unit != "k" && unit != "m" {
 		fmt.Println("Error: Unidad debe ser B, K, M.")
 		return
 	}
-	// Validar la path (path)
+
 	if path == "" {
 		fmt.Println("Error: La path es obligatoria.")
 		return
 	}
-	// Validar el type_ (type)
+
 	if type_ != "p" && type_ != "e" && type_ != "l" {
 		fmt.Println("Error: Tipo de partición debe ser P, E, L.")
 		return
 	}
-	// Validar el fit (fit)
+
 	if fit != "bf" && fit != "wf" && fit != "ff" {
 		fmt.Println("Error: Ajuste debe ser BF, WF o FF")
 		return
 	}
-	// Validar el nombre (name)
+
 	if name == "" {
 		fmt.Println("Error: El nombre es obligatorio.")
 		return
 	}
 
-	// Convertir el tamaño a bytes
 	if unit == "k" {
 		size = size * 1024
 	} else if unit == "m" {
 		size = size * 1024 * 1024
 	}
 
-	// Abrir archivo binario
+	// ================================= ABRIR ARCHIVO =================================
 	archivo, err := Utilidades.OpenFile(path)
 	if err != nil {
 		return
 	}
 
+	// ================================= LEER MBR =================================
 	var MBRTemporal Estructura.MRB
 	if err := Utilidades.ReadObject(archivo, &MBRTemporal, 0); err != nil {
 		return
 	}
 
+	// ================================= VALIDAR NOMBRE =================================
 	for i := 0; i < 4; i++ {
-		if strings.Contains(string(MBRTemporal.Partitions[i].Name[:]), name) {
+		if strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Name[:]), name) {
 			fmt.Println("Error: El nombre: ", name, "ya está en uso en las particiones.")
 			return
 		}
@@ -215,18 +213,18 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 	var EspacioUtilizado int32 = 0
 
 	for i := 0; i < 4; i++ {
-		if MBRTemporal.Partitions[i].Size != 0 {
+		if MBRTemporal.MRBPartitions[i].PART_Size != 0 {
 			TotalParticiones++
-			EspacioUtilizado += MBRTemporal.Partitions[i].Size
-
-			if MBRTemporal.Partitions[i].Type[0] == 'p' {
+			EspacioUtilizado += MBRTemporal.MRBPartitions[i].PART_Size
+			if MBRTemporal.MRBPartitions[i].PART_Type[0] == 'p' {
 				ContadorPrimaria++
-			} else if MBRTemporal.Partitions[i].Type[0] == 'e' {
+			} else if MBRTemporal.MRBPartitions[i].PART_Type[0] == 'e' {
 				ContadorExtendida++
 			}
 		}
 	}
 
+	// ================================= VALIDAR PARTICIONES =================================
 	if TotalParticiones >= 4 && type_ != "l" {
 		fmt.Println("Error: No se pueden crear más de 4 particiones primarias o extendidas en total.")
 		return
@@ -239,35 +237,35 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 		fmt.Println("Error: No se puede crear una partición lógica sin una partición extendida.")
 		return
 	}
-	if EspacioUtilizado+int32(size) > MBRTemporal.MbrSize {
+	if EspacioUtilizado+int32(size) > MBRTemporal.MRBSize {
 		fmt.Println("Error: No hay suficiente espacio en el disco para crear esta partición.")
 		return
 	}
 
 	var vacio int32 = int32(binary.Size(MBRTemporal))
 	if TotalParticiones > 0 {
-		vacio = MBRTemporal.Partitions[TotalParticiones-1].Start + MBRTemporal.Partitions[TotalParticiones-1].Size
+		vacio = MBRTemporal.MRBPartitions[TotalParticiones-1].PART_Start + MBRTemporal.MRBPartitions[TotalParticiones-1].PART_Size
 	}
 
 	for i := 0; i < 4; i++ {
-		if MBRTemporal.Partitions[i].Size == 0 {
+		if MBRTemporal.MRBPartitions[i].PART_Size == 0 {
 			if type_ == "p" || type_ == "e" {
-				MBRTemporal.Partitions[i].Size = int32(size)
-				MBRTemporal.Partitions[i].Size = vacio
-				copy(MBRTemporal.Partitions[i].Name[:], []byte(name))
-				copy(MBRTemporal.Partitions[i].Fit[:], fit)
-				copy(MBRTemporal.Partitions[i].Status[:], "0")
-				copy(MBRTemporal.Partitions[i].Type[:], type_)
-				MBRTemporal.Partitions[i].Correlative = int32(TotalParticiones + 1)
+				MBRTemporal.MRBPartitions[i].PART_Size = int32(size)
+				MBRTemporal.MRBPartitions[i].PART_Start = vacio
+				copy(MBRTemporal.MRBPartitions[i].PART_Name[:], []byte(name))
+				copy(MBRTemporal.MRBPartitions[i].PART_Fit[:], fit)
+				copy(MBRTemporal.MRBPartitions[i].PART_Status[:], "0")
+				copy(MBRTemporal.MRBPartitions[i].PART_Type[:], type_)
+				MBRTemporal.MRBPartitions[i].PART_Correlative = int32(TotalParticiones + 1)
 				if type_ == "e" {
 					EBRInicio := vacio
 					EBRNuevo := Estructura.EBR{
-						Part_Fit:   [1]byte{fit[0]},
-						Part_Start: EBRInicio,
-						Part_Size:  0,
-						Part_Next:  -1,
+						ERBFit:   [1]byte{fit[0]},
+						ERBStart: EBRInicio,
+						ERBSize:  0,
+						ERBNext:  -1,
 					}
-					copy(EBRNuevo.Part_Name[:], "")
+					copy(EBRNuevo.ERBName[:], "")
 					Utilidades.WriteObject(archivo, EBRNuevo, int64(EBRInicio))
 				}
 				fmt.Println(buffer, "Partición creada exitosamente en la path: ", path, " con el nombre: ", name)
@@ -279,8 +277,8 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 	if type_ == "l" {
 		var ParticionExtendida *Estructura.Partition
 		for i := 0; i < 4; i++ {
-			if MBRTemporal.Partitions[i].Type[0] == 'e' {
-				ParticionExtendida = &MBRTemporal.Partitions[i]
+			if MBRTemporal.MRBPartitions[i].PART_Type[0] == 'e' {
+				ParticionExtendida = &MBRTemporal.MRBPartitions[i]
 				break
 			}
 		}
@@ -289,44 +287,44 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 			return
 		}
 
-		EBRPosterior := ParticionExtendida.Size
+		EBRPosterior := ParticionExtendida.PART_Start
 		var EBRUltimo Estructura.EBR
 		for {
 			Utilidades.ReadObject(archivo, &EBRUltimo, int64(EBRPosterior))
-			if strings.Contains(string(EBRUltimo.Part_Name[:]), name) {
+			if strings.Contains(string(EBRUltimo.ERBName[:]), name) {
 				fmt.Println("Error: El nombre: ", name, "ya está en uso en las particiones.")
 				return
 			}
-			if EBRUltimo.Part_Next == -1 {
+			if EBRUltimo.ERBNext == -1 {
 				break
 			}
-			EBRPosterior = EBRUltimo.Part_Next
+			EBRPosterior = EBRUltimo.ERBNext
 		}
 
 		var EBRNuevoPosterior int32
-		if EBRUltimo.Part_Size == 0 {
+		if EBRUltimo.ERBSize == 0 {
 			EBRNuevoPosterior = EBRPosterior
 		} else {
-			EBRNuevoPosterior = EBRUltimo.Part_Size + EBRUltimo.Part_Size
+			EBRNuevoPosterior = EBRUltimo.ERBStart + EBRUltimo.ERBSize
 		}
 
-		if EBRNuevoPosterior+int32(size)+int32(binary.Size(Estructura.EBR{})) > ParticionExtendida.Size+ParticionExtendida.Size {
+		if EBRNuevoPosterior+int32(size)+int32(binary.Size(Estructura.EBR{})) > ParticionExtendida.PART_Start+ParticionExtendida.PART_Size {
 			fmt.Println("Error: No hay suficiente espacio en la partición extendida para esta partición lógica.")
 			return
 		}
 
-		if EBRUltimo.Part_Size != 0 {
-			EBRUltimo.Part_Next = EBRNuevoPosterior
+		if EBRUltimo.ERBSize != 0 {
+			EBRUltimo.ERBNext = EBRNuevoPosterior
 			Utilidades.WriteObject(archivo, EBRUltimo, int64(EBRPosterior))
 		}
 
 		newEBR := Estructura.EBR{
-			Part_Fit:   [1]byte{fit[0]},
-			Part_Start: EBRNuevoPosterior + int32(binary.Size(Estructura.EBR{})),
-			Part_Size:  int32(size),
-			Part_Next:  -1,
+			ERBFit:   [1]byte{fit[0]},
+			ERBStart: EBRNuevoPosterior + int32(binary.Size(Estructura.EBR{})),
+			ERBSize:  int32(size),
+			ERBNext:  -1,
 		}
-		copy(newEBR.Part_Name[:], newEBR.Part_Name[:])
+		copy(newEBR.ERBName[:], newEBR.ERBName[:])
 		Utilidades.WriteObject(archivo, newEBR, int64(EBRNuevoPosterior))
 		fmt.Println("Partición lógica creada exitosamente en la path: ", path, " con el nombre: ", name)
 	}
@@ -339,47 +337,48 @@ func Fdisk(size int, unit string, path string, type_ string, fit string, name st
 }
 
 func Mount(ruta string, nombre string, buffer *bytes.Buffer) {
-	fmt.Fprintln(buffer, "======INICIO Mount======")
-	// Validar la ruta (path)
+	fmt.Fprintln(buffer, "=======================================INICIO Mount=======================================")
+	// ================================= Validar la ruta (path)
 	if ruta == "" {
 		fmt.Println("Error: La ruta es obligatoria.")
 		return
 	}
-	// Validar el nombre (name)
+	// ================================= Validar el nombre (name)
 	if nombre == "" {
 		fmt.Println("Error: El nombre es obligatorio.")
 		return
 	}
-	// Abrir archivo binario
+	// ================================= Abrir archivo binario
 	archivo, err := Utilidades.OpenFile(ruta)
 	if err != nil {
 		return
 	}
+	// ================================= Leer el MBR
 	var MBRTemporal Estructura.MRB
 	if err := Utilidades.ReadObject(archivo, &MBRTemporal, 0); err != nil {
 		return
 	}
-
+	// ================================= Verificar si la partición existe
 	var ParticionExiste = false
 	for i := 0; i < 4; i++ {
-		if strings.Contains(string(MBRTemporal.Partitions[i].Name[:]), nombre) {
+		if strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Name[:]), nombre) {
 			ParticionExiste = true
 			break
 		}
 	}
-
+	// ================================= Montar la partición
 	if !ParticionExiste {
 		fmt.Println("Error: No se encontró la partición con el nombre especificado.")
 		return
 	} else {
 		numero, letra := NumeroLetraMountID(ruta)
 		for i := 0; i < 4; i++ {
-			if strings.Contains(string(MBRTemporal.Partitions[i].Type[:]), "e") || strings.Contains(string(MBRTemporal.Partitions[i].Type[:]), "l") {
+			if strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Type[:]), "e") || strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Type[:]), "l") {
 				fmt.Println("Error: No se puede montar una partición extendida o lógica.")
 				return
-			} else if strings.Contains(string(MBRTemporal.Partitions[i].Name[:]), nombre) {
-				MBRTemporal.Partitions[i].Status[0] = '1'
-				MBRTemporal.Partitions[i].PartId = [4]byte{'4', '7', byte(rune(letra)), byte('0' + numero)}
+			} else if strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Name[:]), nombre) {
+				MBRTemporal.MRBPartitions[i].PART_Status[0] = '1'
+				MBRTemporal.MRBPartitions[i].PART_Id = [4]byte{'4', '7', byte(rune(letra)), byte('0' + numero)}
 				fmt.Println("Partición montada exitosamente en la ruta: ", ruta)
 				break
 			}
@@ -389,148 +388,13 @@ func Mount(ruta string, nombre string, buffer *bytes.Buffer) {
 	if err := Utilidades.WriteObject(archivo, MBRTemporal, 0); err != nil {
 		return
 	}
-
 	var TempMBR2 Estructura.MRB
 	if err := Utilidades.ReadObject(archivo, &TempMBR2, 0); err != nil {
 		return
 	}
-	fmt.Println("----MBR-------")
+	fmt.Println("=================================MBR=================================")
 	Estructura.PrintMBR(TempMBR2, buffer)
-	fmt.Println("----MBR-------")
+	fmt.Println("=================================MBR=================================")
 	defer archivo.Close()
 	fmt.Fprintln(buffer, "======end Mount======")
 }
-
-/*
-func Fdisk(size int, unit string, path string, type_ string, fit string, name string, buffer *bytes.Buffer) {
-	fmt.Fprintln(buffer, "======Start FDISK======")
-	fmt.Fprintln(buffer, "-------------------------------------------------------------")
-	fmt.Fprintln(buffer, "Size:", size)
-	fmt.Fprintln(buffer, "Unit:", unit)
-	fmt.Fprintln(buffer, "Path:", path)
-	fmt.Fprintln(buffer, "Type:", type_)
-	fmt.Fprintln(buffer, "Fit:", fit)
-	fmt.Fprintln(buffer, "Name:", name)
-
-	// Validar el tamaño (size)
-	if size <= 0 {
-		fmt.Fprintln(buffer, "Error: Tamaño debe ser mayor que 0.")
-		return
-	}
-
-	// Validar la unit (unit)
-	if unit != "b" && unit != "k" && unit != "m" {
-		fmt.Fprintln(buffer, "Error: Unidad debe ser B, K, M.")
-		return
-	}
-
-	// Validar la path (path)
-	if path == "" {
-		fmt.Fprintln(buffer, "Error: La path es obligatoria.")
-		return
-	}
-
-	// Validar el type_ (type)
-	if type_ != "p" && type_ != "e" && type_ != "l" {
-		fmt.Fprintln(buffer, "Error: Tipo debe ser P, E, L.")
-		return
-	}
-
-	// Validar el fit (fit)
-	if fit != "bf" && fit != "wf" && fit != "ff" {
-		fmt.Fprintln(buffer, "Error: Ajuste debe ser BF, WF o FF")
-		return
-	}
-
-	// Validar el nombre (name)
-	if name == "" {
-		fmt.Fprintln(buffer, "Error: El nombre es obligatorio.")
-		return
-	}
-
-	// Convertir el tamaño a bytes
-	if unit == "k" {
-		size = size * 1024
-	} else if unit == "m" {
-		size = size * 1024 * 1024
-	}
-
-	// Abrir archivo binario
-	archivo, err := Utilidades.OpenFile(path)
-	if err != nil {
-		fmt.Fprintln(buffer, "Error al abrir el archivo:", err)
-		return
-	}
-
-	var MBRTemporalDisco Estructura.MRB
-	if err := Utilidades.ReadObject(archivo, &MBRTemporalDisco, 0); err != nil {
-		fmt.Fprintln(buffer, "Error al leer el MBR:", err)
-		return
-	}
-
-	// Calcular el espacio restante
-	espacioUsado := int32(0)
-	for i := 0; i < 4; i++ {
-		espacioUsado += MBRTemporalDisco.Partitions[i].Size
-	}
-	espacioRestante := MBRTemporalDisco.MbrSize - espacioUsado
-
-	// Validar que el tamaño de la nueva partición no exceda el espacio restante
-	if int32(size) > espacioRestante {
-		fmt.Fprintln(buffer, "Error: El tamaño de la partición excede el espacio disponible.")
-		fmt.Fprintln(buffer, "Tamaño restante disponible:", espacioRestante, "bytes")
-		return
-	}
-
-	// Aquí continuarías con la lógica para agregar la partición, como antes
-	var contador = 0
-	var vacio = int32(0)
-
-	for i := 0; i < 4; i++ {
-		if MBRTemporalDisco.Partitions[i].Size != 0 {
-			contador++
-			vacio = MBRTemporalDisco.Partitions[i].Start + MBRTemporalDisco.Partitions[i].Size
-		}
-	}
-
-	for i := 0; i < 4; i++ {
-		if MBRTemporalDisco.Partitions[i].Size == 0 {
-			MBRTemporalDisco.Partitions[i].Size = int32(size)
-			if contador == 0 {
-				MBRTemporalDisco.Partitions[i].Start = int32(binary.Size(MBRTemporalDisco))
-			} else {
-				MBRTemporalDisco.Partitions[i].Start = vacio
-			}
-			copy(MBRTemporalDisco.Partitions[i].Name[:], name)
-			copy(MBRTemporalDisco.Partitions[i].Fit[:], fit)
-			copy(MBRTemporalDisco.Partitions[i].Status[:], "0")
-			copy(MBRTemporalDisco.Partitions[i].Type[:], type_)
-			MBRTemporalDisco.Partitions[i].Correlative = int32(contador + 1)
-			break
-		}
-	}
-
-	if err := Utilidades.WriteObject(archivo, MBRTemporalDisco, 0); err != nil {
-		fmt.Fprintln(buffer, "Error al escribir el MBR:", err)
-		return
-	}
-
-	var TempMBR2 Estructura.MRB
-	if err := Utilidades.ReadObject(archivo, &TempMBR2, 0); err != nil {
-		fmt.Fprintln(buffer, "Error al leer el MBR actualizado:", err)
-		return
-	}
-	Estructura.PrintMBR(TempMBR2, buffer)
-
-	defer archivo.Close()
-
-	fmt.Fprintln(buffer, "------------------")
-	fmt.Fprintln(buffer, "Tamaño del disco:", MBRTemporalDisco.MbrSize, "bytes")
-	fmt.Fprintln(buffer, "Tamaño utilizado:", espacioUsado, "bytes")
-	fmt.Fprintln(buffer, "Tamaño restante:", espacioRestante, "bytes")
-	fmt.Fprintln(buffer, "------------------")
-
-	fmt.Fprintln(buffer, "Partición creada con éxito en la path:", path)
-	fmt.Fprintln(buffer, "======End FDISK======")
-}
-*/

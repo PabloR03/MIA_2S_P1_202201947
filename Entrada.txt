@@ -1,4 +1,4 @@
-
+rmdisk -path=/home/pablo03r/discosp1/Disco1.mia
 mkdisk -Size=5 -unit=M -path=/home/pablo03r/discosp1/Disco1.mia
 
 fdisk -type=P -path=/home/pablo03r/discosp1/Disco1.mia -Unit=M -name=Particion1 -size=1
