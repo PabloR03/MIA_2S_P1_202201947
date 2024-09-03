@@ -16,7 +16,7 @@ type MRB struct {
 }
 
 func PrintMBR(buffer *bytes.Buffer, data MRB) {
-	fmt.Fprintf(buffer, "Fecha de Creación: %s, Ajuste: %s, Tamaño: %d, Identificador: %d\n",
+	fmt.Fprintf(buffer, "\nFecha de Creación: %s, Ajuste: %s, Tamaño: %d, Identificador: %d\n",
 		string(data.MRBCreationDate[:]), string(data.MRBFit[:]), data.MRBSize, data.MRBSignature)
 	for i := 0; i < 4; i++ {
 		PrintPartition(buffer, data.MRBPartitions[i])
@@ -39,7 +39,7 @@ type Partition struct {
 }
 
 func PrintPartition(buffer *bytes.Buffer, data Partition) {
-	fmt.Fprintf(buffer, "Nombre: %s, Tipo: %s, Inicio: %d, Tamaño: %d, Estado: %s, ID: %s, Ajuste: %s, Correlativo: %d\n",
+	fmt.Fprintf(buffer, "\nNombre: %s, Tipo: %s, Inicio: %d, Tamaño: %d, Estado: %s, ID: %s, Ajuste: %s, Correlativo: %d\n",
 		string(data.PART_Name[:]), string(data.PART_Type[:]), data.PART_Start, data.PART_Size, string(data.PART_Status[:]),
 		string(data.PART_Id[:]), string(data.PART_Fit[:]), data.PART_Correlative)
 }
@@ -47,8 +47,8 @@ func PrintPartition(buffer *bytes.Buffer, data Partition) {
 //  =================================Estructura EBR=================================
 
 type EBR struct {
-	ERBMount byte
-	ERBFit   byte
+	ERBMount [1]byte
+	ERBFit   [1]byte
 	ERBStart int32
 	ERBSize  int32
 	ERBNext  int32
@@ -56,8 +56,8 @@ type EBR struct {
 }
 
 func PrintEBR(buffer *bytes.Buffer, data EBR) {
-	fmt.Fprintf(buffer, "Mount: %s, Fit: %s, Start: %d, Size: %d, Next: %d, Name: %s\n",
-		string([]byte{data.ERBMount}), string([]byte{data.ERBFit}), data.ERBStart, data.ERBSize, data.ERBNext, string(data.ERBName[:]))
+	fmt.Fprintf(buffer, "\nMount: %s, Fit: %s, Start: %d, Size: %d, Next: %d, Name: %s\n",
+		data.ERBMount, data.ERBFit, data.ERBStart, data.ERBSize, data.ERBNext, string(data.ERBName[:]))
 }
 
 // =================================Estuctura MountId=================================
@@ -92,7 +92,7 @@ type SuperBlock struct {
 
 func PrintSuperBlock(buffer *bytes.Buffer, data SuperBlock) {
 	fmt.Fprint(buffer, "SUPERBLOQUE\n")
-	fmt.Fprintf(buffer, "Filesystem Type: %d, Inodes Count: %d, Blocks Count: %d, Free Blocks Count: %d, Free Inodes Count: %d, Mtime: %s, Utime: %s, Mnt Count: %d, Magic: %d, Inode Size: %d, Block Size: %d, Fist Ino: %d, First Blo: %d, BM Inode Start: %d, BM Block Start: %d, Inode Start: %d, Block Start: %d\n",
+	fmt.Fprintf(buffer, "\nFilesystem Type: %d, Inodes Count: %d, Blocks Count: %d, Free Blocks Count: %d, Free Inodes Count: %d, Mtime: %s, Utime: %s, Mnt Count: %d, Magic: %d, Inode Size: %d, Block Size: %d, Fist Ino: %d, First Blo: %d, BM Inode Start: %d, BM Block Start: %d, Inode Start: %d, Block Start: %d\n",
 		data.S_Filesystem_Type, data.S_Inodes_Count, data.S_Blocks_Count, data.S_Free_Blocks_Count, data.S_Free_Inodes_Count,
 		data.S_Mtime[:], data.S_Umtime[:], data.S_Mnt_Count, data.S_Magic, data.S_Inode_Size, data.S_Block_Size, data.S_Fist_Ino,
 		data.S_First_Blo, data.S_BM_Inode_Start, data.S_BM_Block_Start, data.S_Inode_Start, data.S_Block_Start)
@@ -113,7 +113,7 @@ type Inode struct {
 }
 
 func PrintInode(buffer *bytes.Buffer, data Inode) {
-	fmt.Fprintf(buffer, "INODO %d\nUID: %d \nGID: %d \nSIZE: %d \nACTUAL DATE: %s \nCREATION TIME: %s \nMODIFY TIME: %s \nBLOCKS:%d \nTYPE:%s \nPERM:%s \n",
+	fmt.Fprintf(buffer, "\nINODO %d\nUID: %d \nGID: %d \nSIZE: %d \nACTUAL DATE: %s \nCREATION TIME: %s \nMODIFY TIME: %s \nBLOCKS:%d \nTYPE:%s \nPERM:%s \n",
 		int(data.I_Gid),
 		int(data.I_Uid),
 		int(data.I_Gid),
@@ -135,7 +135,7 @@ type FileBlock struct {
 
 func PrintFileBlock(buffer *bytes.Buffer, data FileBlock) {
 	fmt.Fprint(buffer, "File Block\n")
-	fmt.Fprint(buffer, "Content: %s\n", string(data.B_Content[:]))
+	fmt.Fprintf(buffer, "\nContent: %s\n", string(data.B_Content[:]))
 	fmt.Println("=========================")
 }
 
@@ -165,7 +165,7 @@ type PointerBlock struct {
 func PrintPointerblock(buffer *bytes.Buffer, pointerblock PointerBlock) {
 	fmt.Println("====== Pointerblock ======")
 	for i, pointer := range pointerblock.B_Pointers {
-		fmt.Fprint(buffer, "Pointer %d: %d\n", i, pointer)
+		fmt.Fprintf(buffer, "\nPointer %d: %d\n", i, pointer)
 	}
 	fmt.Println("=========================")
 }

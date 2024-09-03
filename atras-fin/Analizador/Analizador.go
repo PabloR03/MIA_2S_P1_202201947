@@ -83,7 +83,7 @@ func Funcion_mkdisk(params string, writer io.Writer) {
 		case "size", "fit", "unit", "path":
 			fs.Set(nombreFlag, valorFlag)
 		default:
-			fmt.Fprintf(writer, "Error: Parámetro no encontrado.\n")
+			fmt.Fprint(writer, "Error: Parámetro no encontrado.\n")
 		}
 	}
 
@@ -107,7 +107,7 @@ func Funcion_rmdisk(params string, writer io.Writer) {
 		case "path":
 			fs.Set(nombreFlag, valorFlag)
 		default:
-			fmt.Fprintf(writer, "Error: Parámetro no encontrado.\n")
+			fmt.Fprint(writer, "Error: Parámetro no encontrado.\n")
 		}
 	}
 	ManejadorDisco.Rmdisk(*path, writer.(*bytes.Buffer))
@@ -122,47 +122,84 @@ func Funcion_fdisk(input string, writer io.Writer) {
 	fit := fs.String("fit", "wf", "Ajuste")
 	name := fs.String("name", "", "Nombre")
 
+	// Parsear los flags
 	fs.Parse(os.Args[1:])
+
+	// Encontrar los flags en el input
 	matches := re.FindAllStringSubmatch(input, -1)
 
+	// Procesar el input
 	for _, match := range matches {
-		nombreFlag := match[1]
-		valorFlag := strings.ToLower(match[2])
+		flagName := match[1]
+		flagValue := strings.ToLower(match[2])
 
-		valorFlag = strings.Trim(valorFlag, "\"")
+		flagValue = strings.Trim(flagValue, "\"")
 
-		switch nombreFlag {
-		case "size", "unit", "path", "type", "fit", "name":
-			fs.Set(nombreFlag, valorFlag)
+		switch flagName {
+		case "size", "fit", "unit", "path", "name", "type":
+			fs.Set(flagName, flagValue)
 		default:
-			fmt.Fprintf(writer, "Error: Parámetro no encontrado.\n")
+			fmt.Println("Error: Flag not found")
 		}
+	}
+
+	// Validaciones
+	if *size <= 0 {
+		fmt.Println("Error: Size must be greater than 0")
+		return
+	}
+
+	if *path == "" {
+		fmt.Println("Error: Path is required")
+		return
+	}
+
+	// Si no se proporcionó un fit, usar el valor predeterminado "w"
+	if *fit == "" {
+		*fit = "w"
+	}
+
+	// Validar fit (b/w/f)
+	if *fit != "bf" && *fit != "ff" && *fit != "wf" {
+		fmt.Println("Error: Fit must be 'bf', 'ff', or 'wf'")
+		return
+	}
+
+	if *unit != "k" && *unit != "m" {
+		fmt.Println("Error: Unit must be 'k' or 'm'")
+		return
+	}
+
+	if *type_ != "p" && *type_ != "e" && *type_ != "l" {
+		fmt.Println("Error: Type must be 'p', 'e', or 'l'")
+		return
 	}
 	ManejadorDisco.Fdisk(*size, *path, *name, *unit, *type_, *fit, writer.(*bytes.Buffer))
 }
 
 func Funcion_mount(input string, writer io.Writer) {
 	fs := flag.NewFlagSet("mount", flag.ExitOnError)
-	ruta := fs.String("path", "", "Ruta")
-	nombre := fs.String("name", "", "Nombre")
+	path := fs.String("path", "", "Ruta")
+	name := fs.String("name", "", "Nombre de la partición")
 
 	fs.Parse(os.Args[1:])
 	matches := re.FindAllStringSubmatch(input, -1)
 
 	for _, match := range matches {
-		nombreFlag := match[1]
-		valorFlag := strings.ToLower(match[2])
-
-		valorFlag = strings.Trim(valorFlag, "\"")
-
-		switch nombreFlag {
-		case "path", "name":
-			fs.Set(nombreFlag, valorFlag)
-		default:
-			fmt.Println("Error: Parámetro no encontrado.")
-		}
+		flagName := match[1]
+		flagValue := strings.ToLower(match[2]) // Convertir todo a minúsculas
+		flagValue = strings.Trim(flagValue, "\"")
+		fs.Set(flagName, flagValue)
 	}
-	ManejadorDisco.Mount(*ruta, *nombre, writer.(*bytes.Buffer))
+
+	if *path == "" || *name == "" {
+		fmt.Println("Error: Path y Name son obligatorios")
+		return
+	}
+
+	// Convertir el nombre a minúsculas antes de pasarlo al Mount
+	lowercaseName := strings.ToLower(*name)
+	ManejadorDisco.Mount(*path, lowercaseName, writer.(*bytes.Buffer))
 }
 
 func Funcion_mkfs(input string, writer io.Writer) {
@@ -183,7 +220,7 @@ func Funcion_mkfs(input string, writer io.Writer) {
 		case "id", "type", "fs":
 			fs.Set(nombreFlag, valorFlag)
 		default:
-			fmt.Fprintf(writer, "Error: Parámetro no encontrado.\n")
+			fmt.Fprint(writer, "Error: Parámetro no encontrado.\n")
 		}
 	}
 	ManejadorArchivo.Mkfs(*id, *type_, *fs_, writer.(*bytes.Buffer))

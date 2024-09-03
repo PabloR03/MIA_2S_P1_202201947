@@ -20,7 +20,7 @@ func analizarTexto(respuesta http.ResponseWriter, solicitud *http.Request) {
 		result := Analizador.Analizar(string(body))
 
 		// Envía el resultado al frontend
-		fmt.Fprintf(respuesta, result)
+		fmt.Fprint(respuesta, result)
 		return
 	}
 	http.Error(respuesta, "Método No permitido", http.StatusMethodNotAllowed)
