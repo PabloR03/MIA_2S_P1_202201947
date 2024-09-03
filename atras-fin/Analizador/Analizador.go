@@ -9,6 +9,7 @@ import (
 	"os"
 	"proyecto1/ManejadorArchivo"
 	"proyecto1/ManejadorDisco"
+	"proyecto1/Usuario"
 	"regexp"
 	"strings"
 )
@@ -45,6 +46,8 @@ func AnalyzeCommnad(command string, params string, buffer *bytes.Buffer) {
 		Funcion_mount(params, buffer)
 	} else if strings.Contains(command, "mkfs") {
 		Funcion_mkfs(params, buffer)
+	} else if strings.Contains(command, "login") {
+		Funcion_login(params, buffer)
 	}
 }
 
@@ -135,7 +138,7 @@ func Funcion_fdisk(input string, writer io.Writer) {
 			fmt.Fprintf(writer, "Error: Parámetro no encontrado.\n")
 		}
 	}
-	ManejadorDisco.Fdisk(*size, *unit, *path, *type_, *fit, *name, writer.(*bytes.Buffer))
+	ManejadorDisco.Fdisk(*size, *path, *name, *unit, *type_, *fit, writer.(*bytes.Buffer))
 }
 
 func Funcion_mount(input string, writer io.Writer) {
@@ -166,6 +169,7 @@ func Funcion_mkfs(input string, writer io.Writer) {
 	fs := flag.NewFlagSet("mkfs", flag.ExitOnError)
 	id := fs.String("id", "", "ID")
 	type_ := fs.String("type", "", "Tipo")
+	fs_ := fs.String("fs", "2fs", "Fs")
 	fs.Parse(os.Args[1:])
 	matches := re.FindAllStringSubmatch(input, -1)
 
@@ -176,11 +180,42 @@ func Funcion_mkfs(input string, writer io.Writer) {
 		valorFlag = strings.Trim(valorFlag, "\"")
 
 		switch nombreFlag {
-		case "id", "type":
+		case "id", "type", "fs":
 			fs.Set(nombreFlag, valorFlag)
 		default:
 			fmt.Fprintf(writer, "Error: Parámetro no encontrado.\n")
 		}
 	}
-	ManejadorArchivo.Mkfs(*id, *type_, writer.(*bytes.Buffer))
+	ManejadorArchivo.Mkfs(*id, *type_, *fs_, writer.(*bytes.Buffer))
+}
+
+func Funcion_login(input string, writer io.Writer) {
+	fs := flag.NewFlagSet("login", flag.ExitOnError)
+	user := fs.String("user", "", "Usuario")
+	pass := fs.String("pass", "", "Contraseña")
+	id := fs.String("id", "", "Id")
+
+	// Parsearlas
+	fs.Parse(os.Args[1:])
+
+	// Match de flags en el input
+	matches := re.FindAllStringSubmatch(input, -1)
+
+	// Procesar el input
+	for _, match := range matches {
+		flagName := match[1]
+		flagValue := match[2]
+
+		flagValue = strings.Trim(flagValue, "\"")
+
+		switch flagName {
+		case "user", "pass", "id":
+			fs.Set(flagName, flagValue)
+		default:
+			fmt.Println("Error: Flag not found")
+		}
+	}
+
+	Usuario.Login(*user, *pass, *id, writer.(*bytes.Buffer))
+
 }

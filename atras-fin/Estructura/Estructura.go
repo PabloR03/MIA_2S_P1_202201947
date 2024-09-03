@@ -47,8 +47,8 @@ func PrintPartition(buffer *bytes.Buffer, data Partition) {
 //  =================================Estructura EBR=================================
 
 type EBR struct {
-	ERBMount [1]byte
-	ERBFit   [1]byte
+	ERBMount byte
+	ERBFit   byte
 	ERBStart int32
 	ERBSize  int32
 	ERBNext  int32
@@ -57,7 +57,7 @@ type EBR struct {
 
 func PrintEBR(buffer *bytes.Buffer, data EBR) {
 	fmt.Fprintf(buffer, "Mount: %s, Fit: %s, Start: %d, Size: %d, Next: %d, Name: %s\n",
-		string(data.ERBMount[:]), string(data.ERBFit[:]), data.ERBStart, data.ERBSize, data.ERBNext, string(data.ERBName[:]))
+		string([]byte{data.ERBMount}), string([]byte{data.ERBFit}), data.ERBStart, data.ERBSize, data.ERBNext, string(data.ERBName[:]))
 }
 
 // =================================Estuctura MountId=================================
@@ -88,6 +88,14 @@ type SuperBlock struct {
 	S_BM_Block_Start    int32
 	S_Inode_Start       int32
 	S_Block_Start       int32
+}
+
+func PrintSuperBlock(buffer *bytes.Buffer, data SuperBlock) {
+	fmt.Fprint(buffer, "SUPERBLOQUE\n")
+	fmt.Fprintf(buffer, "Filesystem Type: %d, Inodes Count: %d, Blocks Count: %d, Free Blocks Count: %d, Free Inodes Count: %d, Mtime: %s, Utime: %s, Mnt Count: %d, Magic: %d, Inode Size: %d, Block Size: %d, Fist Ino: %d, First Blo: %d, BM Inode Start: %d, BM Block Start: %d, Inode Start: %d, Block Start: %d\n",
+		data.S_Filesystem_Type, data.S_Inodes_Count, data.S_Blocks_Count, data.S_Free_Blocks_Count, data.S_Free_Inodes_Count,
+		data.S_Mtime[:], data.S_Umtime[:], data.S_Mnt_Count, data.S_Magic, data.S_Inode_Size, data.S_Block_Size, data.S_Fist_Ino,
+		data.S_First_Blo, data.S_BM_Inode_Start, data.S_BM_Block_Start, data.S_Inode_Start, data.S_Block_Start)
 }
 
 // =================================Estuctura Inode=================================
@@ -125,10 +133,24 @@ type FileBlock struct {
 	B_Content [64]byte
 }
 
+func PrintFileBlock(buffer *bytes.Buffer, data FileBlock) {
+	fmt.Fprint(buffer, "File Block\n")
+	fmt.Fprint(buffer, "Content: %s\n", string(data.B_Content[:]))
+	fmt.Println("=========================")
+}
+
 // =================================Estuctura Folderblock=================================
 
 type FolderBlock struct {
 	B_Content [4]Content
+}
+
+func PrintFolderBlock(buffer *bytes.Buffer, data FolderBlock) {
+	fmt.Fprint(buffer, "Folder Block\n")
+	for i, content := range data.B_Content {
+		fmt.Printf("Content %d: Name: %s, Inodo: %d\n", i, string(content.B_Name[:]), content.B_Inodo)
+	}
+	fmt.Println("=========================")
 }
 
 type Content struct {
@@ -138,4 +160,12 @@ type Content struct {
 
 type PointerBlock struct {
 	B_Pointers [16]int32
+}
+
+func PrintPointerblock(buffer *bytes.Buffer, pointerblock PointerBlock) {
+	fmt.Println("====== Pointerblock ======")
+	for i, pointer := range pointerblock.B_Pointers {
+		fmt.Fprint(buffer, "Pointer %d: %d\n", i, pointer)
+	}
+	fmt.Println("=========================")
 }

@@ -4,197 +4,315 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io"
+
+	//"io"
 	"os"
 	"proyecto1/Estructura"
+	"proyecto1/ManejadorDisco"
 	"proyecto1/Utilidades"
 	"strings"
 	"time"
 )
 
-func Mkfs(id string, type_ string, writer *bytes.Buffer) {
+func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
 	fmt.Fprintln(writer, "=================================Start MKFS=================================")
 	fmt.Fprintln(writer, "Id:", id)
 	fmt.Fprintln(writer, "Type:", type_)
+	fmt.Fprintln(writer, "Fs:", fs_)
 
-	archivo, err := Utilidades.OpenFile("/home/pablo03r/discosp1/disco1.mia")
+	// Buscar la partición montada por ID
+	var mountedPartition ManejadorDisco.PartitionMounted
+	var partitionFound bool
+
+	for _, partitions := range ManejadorDisco.GetMountedPartitions() {
+		for _, partition := range partitions {
+			if partition.ID == id {
+				mountedPartition = partition
+				partitionFound = true
+				break
+			}
+		}
+		if partitionFound {
+			break
+		}
+	}
+
+	if !partitionFound {
+		fmt.Println("Particion no encontrada")
+		return
+	}
+
+	if mountedPartition.Status != '1' { // Verifica si la partición está montada
+		fmt.Println("La particion aun no esta montada")
+		return
+	}
+
+	// Abrir archivo binario
+	file, err := Utilidades.OpenFile(mountedPartition.Path)
 	if err != nil {
 		return
 	}
 
-	var MBRTemporal Estructura.MRB
-	if err := Utilidades.ReadObject(archivo, &MBRTemporal, 0); err != nil {
+	var TempMBR Estructura.MRB
+	// Leer objeto desde archivo binario
+	if err := Utilidades.ReadObject(file, &TempMBR, 0); err != nil {
 		return
 	}
 
-	var IndiceParticion int = -1
+	// Imprimir objeto
+	Estructura.PrintMBR(writer, TempMBR)
+
+	fmt.Println("-------------")
+
+	var index int = -1
+	// Iterar sobre las particiones para encontrar la que tiene el nombre correspondiente
 	for i := 0; i < 4; i++ {
-		if MBRTemporal.MRBPartitions[i].PART_Size != 0 {
-			if strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Id[:]), "47A1") {
-				fmt.Println("La partición: ", id, " encontrada correctamente.")
-				if strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Status[:]), "1") {
-					fmt.Println("La partición: ", id, " está montada correctamente.")
-					IndiceParticion = i
-				} else {
-					fmt.Println("La partición ", id, " no está montada correctamente.")
-					return
-				}
+		if TempMBR.MRBPartitions[i].PART_Size != 0 {
+			if strings.Contains(string(TempMBR.MRBPartitions[i].PART_Id[:]), id) {
+				index = i
 				break
 			}
 		}
 	}
 
-	if IndiceParticion == -1 {
-		fmt.Println("La partición: ", id, " no existe.")
+	if index != -1 {
+		Estructura.PrintPartition(writer, TempMBR.MRBPartitions[index])
+	} else {
+		fmt.Println("Particion no encontrada (2)")
 		return
 	}
 
-	numerador := int32(MBRTemporal.MRBPartitions[IndiceParticion].PART_Size - int32(binary.Size(Estructura.SuperBlock{})))
-	denrominador_base := int32(4 + int32(binary.Size(Estructura.Inode{})) + 3*int32(binary.Size(Estructura.FileBlock{})))
-	denrominador := denrominador_base
-	n := int32(numerador / denrominador)
+	numerador := int32(TempMBR.MRBPartitions[index].PART_Size - int32(binary.Size(Estructura.SuperBlock{})))
+	denominador_base := int32(4 + int32(binary.Size(Estructura.Inode{})) + 3*int32(binary.Size(Estructura.FileBlock{})))
+	var temp int32 = 0
+	if fs_ == "2fs" {
+		temp = 0
+	} else {
+		fmt.Print("Error por el momento solo está disponible 2FS.")
+	}
+	denominador := denominador_base + temp
+	n := int32(numerador / denominador)
 
-	var NuevoSuperBloque Estructura.SuperBlock
-	NuevoSuperBloque.S_Inodes_Count = 0
-	NuevoSuperBloque.S_Blocks_Count = 0
-	NuevoSuperBloque.S_Free_Blocks_Count = 3 * n
-	NuevoSuperBloque.S_Free_Inodes_Count = n
+	fmt.Println("INODOS:", n)
+
+	// Crear el Superblock con todos los campos calculados
+	var newSuperblock Estructura.SuperBlock
+	newSuperblock.S_Filesystem_Type = 2 // EXT2
+	newSuperblock.S_Inodes_Count = n
+	newSuperblock.S_Blocks_Count = 3 * n
+	newSuperblock.S_Free_Blocks_Count = 3*n - 2
+	newSuperblock.S_Free_Inodes_Count = n - 2
 	FechaActual := time.Now()
-	FechaCreacion := FechaActual.Format("2006-01-02")
-	copy(NuevoSuperBloque.S_Mtime[:], FechaCreacion)
-	copy(NuevoSuperBloque.S_Umtime[:], FechaCreacion)
-	NuevoSuperBloque.S_Mnt_Count = 0
-	fmt.Println("=================================End MKFS=================================")
+	FechaString := FechaActual.Format("2006-01-02 15:04:05")
+	FechaBytes := []byte(FechaString)
+	copy(newSuperblock.S_Mtime[:], FechaBytes)
+	copy(newSuperblock.S_Umtime[:], FechaBytes)
+	newSuperblock.S_Mnt_Count = 1
+	newSuperblock.S_Magic = 0xEF53
+	newSuperblock.S_Inode_Size = int32(binary.Size(Estructura.Inode{}))
+	newSuperblock.S_Block_Size = int32(binary.Size(Estructura.FileBlock{}))
 
-	SistemaEXT2(n, MBRTemporal.MRBPartitions[IndiceParticion], NuevoSuperBloque, FechaCreacion, archivo, writer)
-	defer archivo.Close()
+	// Calcula las posiciones de inicio
+	newSuperblock.S_BM_Inode_Start = TempMBR.MRBPartitions[index].PART_Start + int32(binary.Size(Estructura.SuperBlock{}))
+	newSuperblock.S_BM_Block_Start = newSuperblock.S_BM_Inode_Start + n
+	newSuperblock.S_Inode_Start = newSuperblock.S_BM_Block_Start + 3*n
+	newSuperblock.S_Block_Start = newSuperblock.S_Inode_Start + n*newSuperblock.S_Inode_Size
+
+	if fs_ == "2fs" {
+		create_ext2(n, TempMBR.MRBPartitions[index], newSuperblock, string(FechaBytes), file, writer)
+	} else {
+		fmt.Println("EXT3 no está soportado.")
+	}
+
+	// Cerrar archivo binario
+	defer file.Close()
+
+	fmt.Println("======FIN MKFS======")
 }
 
-func SistemaEXT2(n int32, Particion Estructura.Partition, NuevoSuperBloque Estructura.SuperBlock, Fecha string, archivo *os.File, writer io.Writer) {
-	fmt.Println("=================================EXT2=================================")
+func create_ext2(n int32, partition Estructura.Partition, newSuperblock Estructura.SuperBlock, date string, file *os.File, writer *bytes.Buffer) {
+	fmt.Println("======Start CREATE EXT2======")
+	fmt.Println("INODOS:", n)
 
-	NuevoSuperBloque.S_Filesystem_Type = 2
-	NuevoSuperBloque.S_BM_Inode_Start = Particion.PART_Start + int32(binary.Size(Estructura.SuperBlock{}))
-	NuevoSuperBloque.S_BM_Block_Start = NuevoSuperBloque.S_BM_Inode_Start + n
-	NuevoSuperBloque.S_Inode_Start = NuevoSuperBloque.S_BM_Block_Start + 3*n
-	NuevoSuperBloque.S_Block_Start = NuevoSuperBloque.S_Inode_Start + n*int32(binary.Size(Estructura.Inode{}))
-	// ================================= crear el super bloque =================================
-	NuevoSuperBloque.S_Magic = 0xEF53
-	NuevoSuperBloque.S_Mnt_Count = 1
-	NuevoSuperBloque.S_Inode_Size = int32(binary.Size(Estructura.Inode{}))
-	NuevoSuperBloque.S_Block_Size = int32(binary.Size(Estructura.FileBlock{}))
-	//================================= Crear el bitmap de inodos y bloques =================================
-	NuevoSuperBloque.S_Free_Inodes_Count -= 1
-	NuevoSuperBloque.S_Free_Blocks_Count -= 1
-	NuevoSuperBloque.S_Free_Inodes_Count -= 1
-	NuevoSuperBloque.S_Free_Blocks_Count -= 1
+	// Imprimir Superblock inicial
+	Estructura.PrintSuperBlock(writer, newSuperblock)
+	fmt.Println("Date:", date)
 
+	// Escribe los bitmaps de inodos y bloques en el archivo
 	for i := int32(0); i < n; i++ {
-		err := Utilidades.WriteObject(archivo, byte(0), int64(NuevoSuperBloque.S_BM_Inode_Start+i))
-		if err != nil {
+		if err := Utilidades.WriteObject(file, byte(0), int64(newSuperblock.S_BM_Inode_Start+i)); err != nil {
+			fmt.Println("Error: ", err)
 			return
 		}
 	}
 
 	for i := int32(0); i < 3*n; i++ {
-		err := Utilidades.WriteObject(archivo, byte(0), int64(NuevoSuperBloque.S_BM_Block_Start+i))
-		if err != nil {
+		if err := Utilidades.WriteObject(file, byte(0), int64(newSuperblock.S_BM_Block_Start+i)); err != nil {
+			fmt.Fprint(writer, "Error: ", err)
 			return
 		}
 	}
 
-	var NuevoInodo Estructura.Inode
+	// Inicializa inodos y bloques con valores predeterminados
+	if err := initInodesAndBlocks(n, newSuperblock, file); err != nil {
+		fmt.Println("Error: ", err)
+		return
+	}
+
+	// Crea la carpeta raíz y el archivo users.txt
+	if err := createRootAndUsersFile(newSuperblock, date, file); err != nil {
+		fmt.Println("Error: ", err)
+		return
+	}
+
+	// Escribe el superbloque actualizado al archivo
+	if err := Utilidades.WriteObject(file, newSuperblock, int64(partition.PART_Start)); err != nil {
+		fmt.Println("Error: ", err)
+		return
+	}
+
+	// Marca los primeros inodos y bloques como usados
+	if err := markUsedInodesAndBlocks(newSuperblock, file); err != nil {
+		fmt.Println("Error: ", err)
+		return
+	}
+
+	// Leer e imprimir los inodos después de formatear
+	fmt.Fprint(writer, "====== Imprimiendo Inodos ======")
+	for i := int32(0); i < n; i++ {
+		var inode Estructura.Inode
+		offset := int64(newSuperblock.S_Inode_Start + i*int32(binary.Size(Estructura.Inode{})))
+		if err := Utilidades.ReadObject(file, &inode, offset); err != nil {
+			fmt.Println("Error al leer inodo: ", err)
+			return
+		}
+		Estructura.PrintInode(writer, inode)
+	}
+
+	// Leer e imprimir los Folderblocks y Fileblocks después de formatear
+	fmt.Println("====== Imprimiendo Folderblocks y Fileblocks ======")
+
+	// Imprimir Folderblocks
+	for i := int32(0); i < 1; i++ {
+		var folderblock Estructura.FolderBlock
+		offset := int64(newSuperblock.S_Block_Start + i*int32(binary.Size(Estructura.FolderBlock{})))
+		if err := Utilidades.ReadObject(file, &folderblock, offset); err != nil {
+			fmt.Println("Error al leer Folderblock: ", err)
+			return
+		}
+		Estructura.PrintFolderBlock(writer, folderblock)
+	}
+
+	// Imprimir Fileblocks
+	for i := int32(0); i < 1; i++ {
+		var fileblock Estructura.FileBlock
+		offset := int64(newSuperblock.S_Block_Start + int32(binary.Size(Estructura.FolderBlock{})) + i*int32(binary.Size(Estructura.FileBlock{})))
+		if err := Utilidades.ReadObject(file, &fileblock, offset); err != nil {
+			fmt.Println("Error al leer Fileblock: ", err)
+			return
+		}
+		Estructura.PrintFileBlock(writer, fileblock)
+	}
+
+	// Imprimir el Superblock final
+	Estructura.PrintSuperBlock(writer, newSuperblock)
+
+	fmt.Fprint(writer, "======End CREATE EXT2======")
+}
+
+// Función auxiliar para inicializar inodos y bloques
+func initInodesAndBlocks(n int32, newSuperblock Estructura.SuperBlock, file *os.File) error {
+	var newInode Estructura.Inode
 	for i := int32(0); i < 15; i++ {
-		NuevoInodo.I_Block[i] = -1
+		newInode.I_Block[i] = -1
 	}
 
 	for i := int32(0); i < n; i++ {
-		err := Utilidades.WriteObject(archivo, NuevoInodo, int64(NuevoSuperBloque.S_Inode_Start+i*int32(binary.Size(Estructura.Inode{}))))
-		if err != nil {
-			return
+		if err := Utilidades.WriteObject(file, newInode, int64(newSuperblock.S_Inode_Start+i*int32(binary.Size(Estructura.Inode{})))); err != nil {
+			return err
 		}
 	}
 
-	var NuevoBloqueArchivo Estructura.FileBlock
+	var newFileblock Estructura.FileBlock
 	for i := int32(0); i < 3*n; i++ {
-		err := Utilidades.WriteObject(archivo, NuevoBloqueArchivo, int64(NuevoSuperBloque.S_Block_Start+i*int32(binary.Size(Estructura.FileBlock{}))))
-		if err != nil {
-			return
+		if err := Utilidades.WriteObject(file, newFileblock, int64(newSuperblock.S_Block_Start+i*int32(binary.Size(Estructura.FileBlock{})))); err != nil {
+			return err
 		}
 	}
 
-	var Inodo0 Estructura.Inode
-	//-------------
-	//SE DEBE VER DE DONDE SALE EL USUARIO
-	Inodo0.I_Uid = 1
-	Inodo0.I_Gid = 0
-	Inodo0.I_Size = int32(binary.Size(Estructura.Inode{}))
-	//-------------
+	return nil
+}
 
-	copy(Inodo0.I_Atime[:], Fecha)
-	copy(Inodo0.I_Ctime[:], Fecha)
-	copy(Inodo0.I_Mtime[:], Fecha)
-	Inodo0.I_Type = '1'
-	copy(Inodo0.I_Perm[:], "664")
-	for i := int32(0); i < 15; i++ {
-		Inodo0.I_Block[i] = -1
+// Función auxiliar para crear la carpeta raíz y el archivo users.txt
+func createRootAndUsersFile(newSuperblock Estructura.SuperBlock, date string, file *os.File) error {
+	var Inode0, Inode1 Estructura.Inode
+	initInode(&Inode0, date)
+	initInode(&Inode1, date)
+
+	Inode0.I_Block[0] = 0
+	Inode1.I_Block[0] = 1
+
+	// Asignar el tamaño real del contenido
+	data := "1,G,root\n1,U,root,root,123\n"
+	actualSize := int32(len(data))
+	Inode1.I_Size = actualSize // Esto ahora refleja el tamaño real del contenido
+
+	var Fileblock1 Estructura.FileBlock
+	copy(Fileblock1.B_Content[:], data) // Copia segura de datos a Fileblock
+
+	var Folderblock0 Estructura.FolderBlock
+	Folderblock0.B_Content[0].B_Inodo = 0
+	copy(Folderblock0.B_Content[0].B_Name[:], ".")
+	Folderblock0.B_Content[1].B_Inodo = 0
+	copy(Folderblock0.B_Content[1].B_Name[:], "..")
+	Folderblock0.B_Content[2].B_Inodo = 1
+	copy(Folderblock0.B_Content[2].B_Name[:], "users.txt")
+
+	// Escribir los inodos y bloques en las posiciones correctas
+	if err := Utilidades.WriteObject(file, Inode0, int64(newSuperblock.S_Inode_Start)); err != nil {
+		return err
 	}
-	Inodo0.I_Block[0] = 0
-
-	//================================= Crear el bloque de carpetas =================================
-	var BloqueCarpeta0 Estructura.FolderBlock
-	copy(BloqueCarpeta0.B_Content[0].B_Name[:], ".")
-	BloqueCarpeta0.B_Content[0].B_Inodo = 0
-	copy(BloqueCarpeta0.B_Content[1].B_Name[:], "..")
-	BloqueCarpeta0.B_Content[1].B_Inodo = 0
-	copy(BloqueCarpeta0.B_Content[2].B_Name[:], "users.txt")
-	BloqueCarpeta0.B_Content[2].B_Inodo = 1
-	BloqueCarpeta0.B_Content[3].B_Inodo = -1
-	// ==================================================================
-
-	// ==================================================================
-	NuevoSuperBloque.S_Inodes_Count++
-
-	var Inodo1 Estructura.Inode //Inode 1
-	Inodo1.I_Uid = 1
-	Inodo1.I_Gid = 0
-	Inodo1.I_Size = int32(binary.Size(Estructura.Inode{}))
-	copy(Inodo1.I_Atime[:], Fecha)
-	copy(Inodo1.I_Ctime[:], Fecha)
-	copy(Inodo1.I_Mtime[:], Fecha)
-	Inodo0.I_Type = '1'
-	copy(Inodo1.I_Perm[:], "664")
-	for i := int32(0); i < 15; i++ {
-		Inodo1.I_Block[i] = -1
+	if err := Utilidades.WriteObject(file, Inode1, int64(newSuperblock.S_Inode_Start+int32(binary.Size(Estructura.Inode{})))); err != nil {
+		return err
 	}
-	Inodo1.I_Block[0] = 1
+	if err := Utilidades.WriteObject(file, Folderblock0, int64(newSuperblock.S_Block_Start)); err != nil {
+		return err
+	}
+	if err := Utilidades.WriteObject(file, Fileblock1, int64(newSuperblock.S_Block_Start+int32(binary.Size(Estructura.FolderBlock{})))); err != nil {
+		return err
+	}
 
-	NuevoSuperBloque.S_Inodes_Count++
+	return nil
+}
 
-	DatosBloque := "1,G,root\n1,U,root,root,123\n"
-	var BloqueArchivo1 Estructura.FileBlock
-	copy(BloqueArchivo1.B_Content[:], DatosBloque)
+// Función auxiliar para inicializar un inodo
+func initInode(inode *Estructura.Inode, date string) {
+	inode.I_Uid = 1
+	inode.I_Gid = 1
+	inode.I_Size = 0
+	copy(inode.I_Atime[:], date)
+	copy(inode.I_Ctime[:], date)
+	copy(inode.I_Mtime[:], date)
+	copy(inode.I_Perm[:], "664")
 
-	NuevoSuperBloque.S_First_Blo = int32(0)
-	NuevoSuperBloque.S_First_Blo = int32(1)
+	for i := int32(0); i < 15; i++ {
+		inode.I_Block[i] = -1
+	}
+}
 
-	Utilidades.WriteObject(archivo, NuevoSuperBloque, int64(Particion.PART_Start))
-
-	// ================================= Escritura de los bitmap de inodos =================================
-	Utilidades.WriteObject(archivo, byte(1), int64(NuevoSuperBloque.S_BM_Inode_Start))
-	Utilidades.WriteObject(archivo, byte(1), int64(NuevoSuperBloque.S_BM_Inode_Start+1))
-
-	// ================================= Escritura de los bitmap de bloques =================================
-	Utilidades.WriteObject(archivo, byte(1), int64(NuevoSuperBloque.S_BM_Block_Start))
-	Utilidades.WriteObject(archivo, byte(1), int64(NuevoSuperBloque.S_BM_Block_Start+1))
-
-	// ================================= Escritura de los inodos =================================
-	Utilidades.WriteObject(archivo, Inodo0, int64(NuevoSuperBloque.S_Inode_Start))
-	Utilidades.WriteObject(archivo, Inodo1, int64(NuevoSuperBloque.S_Inode_Start+int32(binary.Size(Estructura.Inode{}))))
-
-	// ================================= Escritura de los bloques =================================
-	Utilidades.WriteObject(archivo, BloqueCarpeta0, int64(NuevoSuperBloque.S_Block_Start))
-	Utilidades.WriteObject(archivo, BloqueArchivo1, int64(NuevoSuperBloque.S_Block_Start+int32(binary.Size(Estructura.FileBlock{}))))
-
-	fmt.Fprintln(writer, "=================================End EXT2=================================")
+// Función auxiliar para marcar los inodos y bloques usados
+func markUsedInodesAndBlocks(newSuperblock Estructura.SuperBlock, file *os.File) error {
+	if err := Utilidades.WriteObject(file, byte(1), int64(newSuperblock.S_BM_Inode_Start)); err != nil {
+		return err
+	}
+	if err := Utilidades.WriteObject(file, byte(1), int64(newSuperblock.S_BM_Inode_Start+1)); err != nil {
+		return err
+	}
+	if err := Utilidades.WriteObject(file, byte(1), int64(newSuperblock.S_BM_Block_Start)); err != nil {
+		return err
+	}
+	if err := Utilidades.WriteObject(file, byte(1), int64(newSuperblock.S_BM_Block_Start+1)); err != nil {
+		return err
+	}
+	return nil
 }
