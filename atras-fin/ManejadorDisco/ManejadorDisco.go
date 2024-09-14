@@ -162,8 +162,9 @@ func Mkdisk(size int, fit string, unit string, path string, buffer *bytes.Buffer
 	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MKDISK=-=-=-=-=-=-=")
 }
 
+// YA REVISADO
 func Rmdisk(path string, buffer *bytes.Buffer) {
-	fmt.Fprintln(buffer, "INICIO RMDISK=======================================")
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=INICIO RMDISK=-=-=-=-=-=-=")
 
 	// ================================= Validar la path (path)
 	if path == "" {
@@ -175,11 +176,12 @@ func Rmdisk(path string, buffer *bytes.Buffer) {
 	err := Utilidades.DeleteFile(path)
 	if err != nil {
 		fmt.Fprintln(buffer, "Error RMDISK:", err)
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN RMDISK=-=-=-=-=-=-=")
 		return
 	}
 
 	fmt.Fprintln(buffer, "Disco eliminado con éxito en la path:", path)
-	fmt.Fprintln(buffer, "End RMDISK=======================================")
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN RMDISK=-=-=-=-=-=-=")
 }
 
 func Fdisk(size int, path string, name string, unit string, type_ string, fit string, buffer *bytes.Buffer) {

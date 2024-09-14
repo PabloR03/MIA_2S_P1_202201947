@@ -1,3 +1,8 @@
+rmdisk -path=/home/pablo03r/discosp1/Disco1.mia
+
 #Crea un disco de 3000 Kb en la carpeta home
 #mkdisk -Size=5 -unit=M -path=/home/pablo03r/discosp1/Disco2.mia
 mkdisk -Size=5 -unit=M -path=/home/pablo03r/discosp1/Disco1.mia
+
+# Este disco no existe
+rmdisk -path=/home/pablo03r/discosp1/Disco2.mia

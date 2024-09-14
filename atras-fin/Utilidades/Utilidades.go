@@ -40,14 +40,17 @@ func OpenFile(name string) (*os.File, error) {
 // ================================= Eliminar Archivo =================================
 func DeleteFile(nombre string) error {
 	if _, err := os.Stat(nombre); os.IsNotExist(err) {
+		println("Error: El archivo no existe.")
 		fmt.Println("Error: El archivo no existe.")
 		return err
 	}
 	err := os.Remove(nombre)
 	if err != nil {
+		println("Error al eliminar el archivo: ", err)
 		fmt.Println("Error al eliminar el archivo: ", err)
 		return err
 	}
+
 	return nil
 }
 
