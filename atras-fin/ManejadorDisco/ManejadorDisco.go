@@ -184,6 +184,7 @@ func Rmdisk(path string, buffer *bytes.Buffer) {
 	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN RMDISK=-=-=-=-=-=-=")
 }
 
+// YA REVISADO
 func Fdisk(size int, path string, name string, unit string, type_ string, fit string, buffer *bytes.Buffer) {
 	fmt.Fprintln(buffer, "=-=-=-=-=-=-=INICIO FDISK=-=-=-=-=-=-=")
 	// Validar el tamaño (size)
@@ -412,7 +413,7 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 	fmt.Println("")
 }
 
-// Función para montar particiones
+// YA REVISADO
 func Mount(path string, name string, buffer *bytes.Buffer) {
 	fmt.Fprintln(buffer, "=-=-=-=-=-=-=INICIO MOUNT=-=-=-=-=-=-=")
 	file, err := Utilidades.OpenFile(path)
