@@ -47,17 +47,17 @@ func PrintPartition(buffer *bytes.Buffer, data Partition) {
 //  =================================Estructura EBR=================================
 
 type EBR struct {
-	ERBMount [1]byte
-	ERBFit   [1]byte
-	ERBStart int32
-	ERBSize  int32
-	ERBNext  int32
-	ERBName  [16]byte
+	EBRMount [1]byte
+	EBRFit   [1]byte
+	EBRStart int32
+	EBRSize  int32
+	EBRNext  int32
+	EBRName  [16]byte
 }
 
 func PrintEBR(buffer *bytes.Buffer, data EBR) {
 	fmt.Fprintf(buffer, "\nMount: %s, Fit: %s, Start: %d, Size: %d, Next: %d, Name: %s\n",
-		data.ERBMount, data.ERBFit, data.ERBStart, data.ERBSize, data.ERBNext, string(data.ERBName[:]))
+		data.EBRMount, data.EBRFit, data.EBRStart, data.EBRSize, data.EBRNext, string(data.EBRName[:]))
 }
 
 // =================================Estuctura MountId=================================
@@ -68,6 +68,7 @@ type MountId struct {
 	MIDletter int32
 }
 
+// =================================Esctructuras para carpetas y Archivos=================================
 // =================================Estuctura Superblock=================================
 
 type SuperBlock struct {
@@ -139,6 +140,7 @@ func PrintFileBlock(buffer *bytes.Buffer, data FileBlock) {
 	fmt.Println("=========================")
 }
 
+// ================================= BLOQUE =================================
 // =================================Estuctura Folderblock=================================
 
 type FolderBlock struct {

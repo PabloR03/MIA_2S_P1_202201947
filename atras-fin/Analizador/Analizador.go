@@ -23,11 +23,13 @@ func Analizar(texto string) string {
 	for scanner.Scan() {
 		entrada := scanner.Text()
 		if len(entrada) == 0 || entrada[0] == '#' {
+			fmt.Fprintf(&buffer, "%s\n", entrada)
 			continue
 		}
 		entrada = strings.TrimSpace(entrada)
 		command, params := getCommandAndParams(entrada)
-		fmt.Fprintln(&buffer, "Comando:", command, "Parametros:", params)
+		println("Comando:", command, "Parametros:", params)
+		// fmt.Fprintln(&buffer, "Comando:", command, "Parametros:", params)
 		AnalyzeCommnad(command, params, &buffer)
 	}
 
@@ -64,6 +66,7 @@ func getCommandAndParams(input string) (string, string) {
 	return "", input
 }
 
+// ya revisado
 func Funcion_mkdisk(params string, writer io.Writer) {
 	// Define flags
 	fs := flag.NewFlagSet("mkdisk", flag.ExitOnError)
@@ -83,11 +86,12 @@ func Funcion_mkdisk(params string, writer io.Writer) {
 		case "size", "fit", "unit", "path":
 			fs.Set(nombreFlag, valorFlag)
 		default:
+			println("Error: Parámetro no encontrado.")
 			fmt.Fprint(writer, "Error: Parámetro no encontrado.\n")
 		}
 	}
 
-	fs.Parse([]string{}) // Asegúrate de no intentar parsear argumentos adicionales de os.Args
+	fs.Parse([]string{})
 
 	ManejadorDisco.Mkdisk(*size, *fit, *unit, *path, writer.(*bytes.Buffer))
 }

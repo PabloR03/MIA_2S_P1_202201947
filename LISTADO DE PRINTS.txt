@@ -1,0 +1,8 @@
+
+# mkdisk
+fmt.Fprintln(&buffer, "Comando:", command, "Parametros:", params)
+fmt.Fprintln(buffer, "Size:", size)
+fmt.Fprintln(buffer, "Fit:", fit)
+fmt.Fprintln(buffer, "Unit:", unit)
+fmt.Fprintln(buffer, "Path:", path)
+

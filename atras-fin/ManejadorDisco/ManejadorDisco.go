@@ -78,12 +78,18 @@ func generateDiskID(path string) string {
 	return strings.ToLower(path)
 }
 
+// YA REVISADO
 func Mkdisk(size int, fit string, unit string, path string, buffer *bytes.Buffer) {
-	fmt.Fprintln(buffer, "INICIO MKDISK=======================================")
-	fmt.Fprintln(buffer, "Size:", size)
-	fmt.Fprintln(buffer, "Fit:", fit)
-	fmt.Fprintln(buffer, "Unit:", unit)
-	fmt.Fprintln(buffer, "Path:", path)
+
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=INICIO MKDISK=-=-=-=-=-=-=")
+	//fmt.Fprintln(buffer, "Size:", size)
+	//fmt.Fprintln(buffer, "Fit:", fit)
+	//fmt.Fprintln(buffer, "Unit:", unit)
+	//fmt.Fprintln(buffer, "Path:", path)
+	println("Size:", size)
+	println("Fit:", fit)
+	println("Unit:", unit)
+	println("Path:", path)
 
 	// ================================= VALIDACIONES =================================
 	if size <= 0 {
@@ -152,7 +158,8 @@ func Mkdisk(size int, fit string, unit string, path string, buffer *bytes.Buffer
 	}
 	defer archivo.Close()
 	fmt.Fprintln(buffer, "Disco creado con éxito en la path: ", path)
-	fmt.Fprintln(buffer, "End MKDISK=======================================")
+	println("Disco creado con éxito en la path: ", path)
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MKDISK=-=-=-=-=-=-=")
 }
 
 func Rmdisk(path string, buffer *bytes.Buffer) {
@@ -284,12 +291,12 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 				if type_ == "e" {
 					EBRInicio := vacio
 					EBRNuevo := Estructura.EBR{
-						ERBFit:   [1]byte{fit[0]},
-						ERBStart: EBRInicio,
-						ERBSize:  0,
-						ERBNext:  -1,
+						EBRFit:   [1]byte{fit[0]},
+						EBRStart: EBRInicio,
+						EBRSize:  0,
+						EBRNext:  -1,
 					}
-					copy(EBRNuevo.ERBName[:], "")
+					copy(EBRNuevo.EBRName[:], "")
 					if err := Utilidades.WriteObject(archivo, EBRNuevo, int64(EBRInicio)); err != nil {
 						return
 					}
@@ -319,21 +326,21 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 			if err := Utilidades.ReadObject(archivo, &EBRUltimo, int64(EBRPosterior)); err != nil {
 				return
 			}
-			if strings.Contains(string(EBRUltimo.ERBName[:]), name) {
+			if strings.Contains(string(EBRUltimo.EBRName[:]), name) {
 				fmt.Fprintf(buffer, "Error FDISK: El name: %s ya está en uso en las particiones.\n", name)
 				return
 			}
-			if EBRUltimo.ERBNext == -1 {
+			if EBRUltimo.EBRNext == -1 {
 				break
 			}
-			EBRPosterior = EBRUltimo.ERBNext
+			EBRPosterior = EBRUltimo.EBRNext
 		}
 
 		var EBRNuevoPosterior int32
-		if EBRUltimo.ERBSize == 0 {
+		if EBRUltimo.EBRSize == 0 {
 			EBRNuevoPosterior = EBRPosterior
 		} else {
-			EBRNuevoPosterior = EBRUltimo.ERBStart + EBRUltimo.ERBSize
+			EBRNuevoPosterior = EBRUltimo.EBRStart + EBRUltimo.EBRSize
 		}
 
 		if EBRNuevoPosterior+int32(size)+int32(binary.Size(Estructura.EBR{})) > ParticionExtendida.PART_Start+ParticionExtendida.PART_Size {
@@ -341,20 +348,20 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 			return
 		}
 
-		if EBRUltimo.ERBSize != 0 {
-			EBRUltimo.ERBNext = EBRNuevoPosterior
+		if EBRUltimo.EBRSize != 0 {
+			EBRUltimo.EBRNext = EBRNuevoPosterior
 			if err := Utilidades.WriteObject(archivo, EBRUltimo, int64(EBRPosterior)); err != nil {
 				return
 			}
 		}
 
 		newEBR := Estructura.EBR{
-			ERBFit:   [1]byte{fit[0]},
-			ERBStart: EBRNuevoPosterior + int32(binary.Size(Estructura.EBR{})),
-			ERBSize:  int32(size),
-			ERBNext:  -1,
+			EBRFit:   [1]byte{fit[0]},
+			EBRStart: EBRNuevoPosterior + int32(binary.Size(Estructura.EBR{})),
+			EBRSize:  int32(size),
+			EBRNext:  -1,
 		}
-		copy(newEBR.ERBName[:], name)
+		copy(newEBR.EBRName[:], name)
 		if err := Utilidades.WriteObject(archivo, newEBR, int64(EBRNuevoPosterior)); err != nil {
 			return
 		}
@@ -368,10 +375,10 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 				return
 			}
 			Estructura.PrintEBR(buffer, EBRTemp)
-			if EBRTemp.ERBNext == -1 {
+			if EBRTemp.EBRNext == -1 {
 				break
 			}
-			EBRActual = EBRTemp.ERBNext
+			EBRActual = EBRTemp.EBRNext
 		}
 		fmt.Println("---------------------------------------------")
 	}
