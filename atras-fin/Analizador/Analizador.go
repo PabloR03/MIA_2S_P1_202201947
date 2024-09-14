@@ -9,6 +9,7 @@ import (
 	"os"
 	"proyecto1/ManejadorArchivo"
 	"proyecto1/ManejadorDisco"
+	"proyecto1/Reportes"
 	"proyecto1/Usuario"
 	"regexp"
 	"strings"
@@ -50,6 +51,12 @@ func AnalyzeCommnad(command string, params string, buffer *bytes.Buffer) {
 		Funcion_mkfs(params, buffer)
 	} else if strings.Contains(command, "login") {
 		Funcion_login(params, buffer)
+	} else if strings.Contains(command, "rep") {
+		comando_rep(params, buffer)
+	} else if strings.Contains(command, "ldisk") {
+		Funcion_ldisk(buffer)
+	} else {
+		fmt.Fprintf(buffer, "Error: Comando no encontrado.\n")
 	}
 }
 
@@ -209,6 +216,7 @@ func Funcion_mount(input string, writer io.Writer) {
 	ManejadorDisco.Mount(*path, lowercaseName, writer.(*bytes.Buffer))
 }
 
+// ya revisada
 func Funcion_mkfs(input string, writer io.Writer) {
 	fs := flag.NewFlagSet("mkfs", flag.ExitOnError)
 	id := fs.String("id", "", "ID")
@@ -261,5 +269,36 @@ func Funcion_login(input string, writer io.Writer) {
 	}
 
 	Usuario.Login(*user, *pass, *id, writer.(*bytes.Buffer))
+}
 
+func comando_rep(entrada string, buffer io.Writer) {
+	fs := flag.NewFlagSet("rep", flag.ExitOnError)
+	nombre := fs.String("name", "", "Nombre")
+	ruta := fs.String("path", "full", "Ruta")
+	ID := fs.String("id", "", "IDParticion")
+	path_file_ls := fs.String("path_file_l", "", "PathFile")
+
+	fs.Parse(os.Args[1:])
+	matches := re.FindAllStringSubmatch(entrada, -1)
+
+	for _, match := range matches {
+		nombreFlag := match[1]
+		valorFlag := strings.ToLower(match[2])
+
+		valorFlag = strings.Trim(valorFlag, "\"")
+
+		switch nombreFlag {
+		case "name", "path", "id", "path_file_l":
+			fs.Set(nombreFlag, valorFlag)
+		default:
+			fmt.Fprintf(buffer, "Error: El comando 'REP' incluye parámetros no asociados.\n")
+		}
+	}
+	Reportes.Rep(*nombre, *ruta, *ID, *path_file_ls, buffer.(*bytes.Buffer))
+}
+
+// Creacion de comando l disk para mostrar los discos montados
+func Funcion_ldisk(writer io.Writer) {
+
+	ManejadorDisco.Ldisk(writer.(*bytes.Buffer))
 }

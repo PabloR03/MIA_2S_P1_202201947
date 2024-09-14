@@ -45,3 +45,77 @@ mount -path=/home/pablo03r/discosp1/Disco1.mia -name=Particion7
 
 #ERROR, ES UNA LOGICA, EL ERROR QUE VA MOSTRAR ES ALGO COMO QUE LA PARTICION NO EXISTIERA, ASI QUE OJO CON LO QUE DICE EN SUS ERRORES
 mount -path=/home/pablo03r/discosp1/Disco1.mia -name=Particion13
+
+#mount Disco1.mia -name=Particion7
+rep -id=472a -path=/home/pablo03r/discosp1/ReporteDisco.jpg -name=mbr
+
+#mount Disco1.mia -name=Particion7
+-ldisk
+
+#rmdisk -path=/home/pablo03r/discosp1/Disco1.mia
+
+
+#mount Disco1.mia -name=Particion7
+#-ldisk
+
+
+rmdisk -path=/home/pablo03r/discosp1/Disco2.mia
+
+#Crea un disco de 3000 Kb en la carpeta home
+#mkdisk -Size=5 -unit=M -path=/home/pablo03r/discosp1/Disco2.mia
+mkdisk -Size=5 -unit=M -path=/home/pablo03r/discosp1/Disco2.mia
+
+# Este disco no existe
+rmdisk -path=/home/pablo03r/discosp1/Disco2.mia
+
+#Montando dos particiones principales
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion1 -size=1
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion2 -size=1
+
+
+
+#Archivo manuel
+#Creando Disco
+mkdisk -Size=6 -unit=M -path=/home/pablo03r/discosp1/Disco2.mia
+
+#Creando Particiones
+#Errores 1
+fdisk -type=L -path=/home/pablo03r/discosp1/Disco2.mia -Unit=k -name=Particion1 -size=1
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion4 -size=1
+fdisk -type=E -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion2 -size=1
+fdisk -type=L -path=/home/pablo03r/discosp1/Disco2.mia -Unit=k -name=Particion3 -size=1
+#Errores 2
+fdisk -type=E -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion5 -size=1
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion6 -size=1
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion7 -size=1
+#Errores 3
+fdisk -type=P -path=/home/pablo03r/discosp1/Disco2.mia -Unit=M -name=Particion8 -size=1
+fdisk -type=L -path=/home/pablo03r/discosp1/Disco2.mia -Unit=k -name=Particion9 -size=1
+fdisk -type=L -path=/home/pablo03r/discosp1/Disco2.mia -Unit=k -name=Particion10 -size=1
+fdisk -type=L -path=/home/pablo03r/discosp1/Disco2.mia -Unit=k -name=Particion11 -size=1
+fdisk -type=L -path=/home/pablo03r/discosp1/Disco2.mia -Unit=k -name=Particion12 -size=1
+fdisk -type=L -path=/home/pablo03r/discosp1/Disco2.mia -Unit=k -name=Particion13 -size=1
+
+#SE PUEDEN MONTAR
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion4
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion6
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion7
+
+#ERROR YA ESTÁ MONTADA
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion7
+
+#ERROR, ES UNA LOGICA, EL ERROR QUE VA MOSTRAR ES ALGO COMO QUE LA PARTICION NO EXISTIERA, ASI QUE OJO CON LO QUE DICE EN SUS ERRORES
+mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion13
+
+#mount Disco2.mia -name=Particion7
+rep -id=472a -path=/home/pablo03r/discosp1/ReporteDisco2.jpg -name=disk
+
+#mount Disco2.mia -name=Particion7
+-ldisk
+
+
+
+#rmdisk -path=/home/pablo03r/discosp1/Disco2.mia
+#rmdisk -path=/home/pablo03r/discosp1/Disco1.mia
+#mount Disco2.mia -name=Particion7
+#-ldisk

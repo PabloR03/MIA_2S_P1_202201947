@@ -14,11 +14,15 @@ import (
 	"time"
 )
 
+// YA REVISADO
 func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
-	fmt.Fprintln(writer, "=================================Start MKFS=================================")
+	fmt.Fprintln(writer, "=-=-=-=-=-=-=-= INCIO MKFS=-=-=-=-=-=-=-=-=")
 	fmt.Fprintln(writer, "Id:", id)
 	fmt.Fprintln(writer, "Type:", type_)
 	fmt.Fprintln(writer, "Fs:", fs_)
+	println("Id:", id)
+	println("Type:", type_)
+	println("Fs:", fs_)
 
 	// Buscar la partición montada por ID
 	var mountedPartition ManejadorDisco.PartitionMounted
@@ -38,12 +42,12 @@ func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
 	}
 
 	if !partitionFound {
-		fmt.Println("Particion no encontrada")
+		fmt.Fprintln(writer, "Particion no encontrada")
 		return
 	}
 
 	if mountedPartition.Status != '1' { // Verifica si la partición está montada
-		fmt.Println("La particion aun no esta montada")
+		fmt.Fprintln(writer, "La particion aun no esta montada")
 		return
 	}
 
@@ -78,7 +82,7 @@ func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
 	if index != -1 {
 		Estructura.PrintPartition(writer, TempMBR.MRBPartitions[index])
 	} else {
-		fmt.Println("Particion no encontrada (2)")
+		fmt.Fprintln(writer, "Particion no encontrada (2)")
 		return
 	}
 
@@ -88,7 +92,7 @@ func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
 	if fs_ == "2fs" {
 		temp = 0
 	} else {
-		fmt.Print("Error por el momento solo está disponible 2FS.")
+		fmt.Fprintln(writer, "Error por el momento solo está disponible 2FS.")
 	}
 	denominador := denominador_base + temp
 	n := int32(numerador / denominador)
@@ -103,7 +107,7 @@ func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
 	newSuperblock.S_Free_Blocks_Count = 3*n - 2
 	newSuperblock.S_Free_Inodes_Count = n - 2
 	FechaActual := time.Now()
-	FechaString := FechaActual.Format("2006-01-02 15:04:05")
+	FechaString := FechaActual.Format("02-01-2006 15:04:05")
 	FechaBytes := []byte(FechaString)
 	copy(newSuperblock.S_Mtime[:], FechaBytes)
 	copy(newSuperblock.S_Umtime[:], FechaBytes)
@@ -121,13 +125,13 @@ func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
 	if fs_ == "2fs" {
 		create_ext2(n, TempMBR.MRBPartitions[index], newSuperblock, string(FechaBytes), file, writer)
 	} else {
-		fmt.Println("EXT3 no está soportado.")
+		fmt.Fprintln(writer, "EXT3 no está soportado.")
 	}
 
 	// Cerrar archivo binario
 	defer file.Close()
 
-	fmt.Println("======FIN MKFS======")
+	fmt.Fprintln(writer, "=-=-=-=-=-=-=-= FIN MKFS=-=-=-=-=-=-=-=-=")
 }
 
 func create_ext2(n int32, partition Estructura.Partition, newSuperblock Estructura.SuperBlock, date string, file *os.File, writer *bytes.Buffer) {

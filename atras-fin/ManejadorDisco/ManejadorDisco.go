@@ -24,11 +24,11 @@ type PartitionMounted struct {
 var mountedPartitions = make(map[string][]PartitionMounted)
 
 // Función para imprimir las particiones montadas
-func PrintMountedPartitions() {
-	fmt.Println("Particiones montadas:")
+func PrintMountedPartitions(buffer *bytes.Buffer) {
+	fmt.Fprintf(buffer, "Particiones montadas: \n")
 
 	if len(mountedPartitions) == 0 {
-		fmt.Println("No hay particiones montadas.")
+		fmt.Fprintf(buffer, "No hay particiones montadas. \n")
 		return
 	}
 
@@ -39,11 +39,22 @@ func PrintMountedPartitions() {
 			if partition.LoggedIn {
 				loginStatus = "Sí"
 			}
-			fmt.Printf(" - Partición Name: %s, ID: %s, Path: %s, Status: %c, LoggedIn: %s\n",
+			fmt.Fprintf(buffer, " - Partición Name: %s, ID: %s, Path: %s, Status: %c, LoggedIn: %s\n",
 				partition.Name, partition.ID, partition.Path, partition.Status, loginStatus)
 		}
 	}
-	fmt.Println("")
+	fmt.Fprintln(buffer, "")
+}
+
+// Funcion para eliminar una particion montada
+func EliminarDiscoPorRuta(ruta string, buffer *bytes.Buffer) {
+	discoID := generateDiskID(ruta)
+	if _, existe := mountedPartitions[discoID]; existe {
+		delete(mountedPartitions, discoID)
+		fmt.Fprintf(buffer, "El disco con ruta '%s' y sus particiones asociadas han sido eliminados.\n", ruta)
+	} else {
+		fmt.Fprintf(buffer, "Error: No se encontró un disco con la ruta '%s'.\n", ruta)
+	}
 }
 
 // Función para obtener las particiones montadas
@@ -180,6 +191,8 @@ func Rmdisk(path string, buffer *bytes.Buffer) {
 		return
 	}
 
+	// ================================= Eliminar las particiones montadas asociadas al disco
+	EliminarDiscoPorRuta(path, buffer)
 	fmt.Fprintln(buffer, "Disco eliminado con éxito en la path:", path)
 	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN RMDISK=-=-=-=-=-=-=")
 }
@@ -533,4 +546,10 @@ func Mount(path string, name string, buffer *bytes.Buffer) {
 	fmt.Println("FIN DE REVISION DE PARTICIONES MONTADAS")
 
 	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MOUNT=-=-=-=-=-=-=")
+}
+
+func Ldisk(buffer *bytes.Buffer) {
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=INICIO LDISK=-=-=-=-=-=-=")
+	PrintMountedPartitions(buffer)
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN LDISK=-=-=-=-=-=-=")
 }
