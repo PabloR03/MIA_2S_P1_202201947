@@ -96,6 +96,7 @@ func Funcion_mkdisk(params string, writer io.Writer) {
 	ManejadorDisco.Mkdisk(*size, *fit, *unit, *path, writer.(*bytes.Buffer))
 }
 
+// ya revisado
 func Funcion_rmdisk(params string, writer io.Writer) {
 	fs := flag.NewFlagSet("rmdisk", flag.ExitOnError)
 	path := fs.String("path", "", "Ruta")
@@ -117,6 +118,7 @@ func Funcion_rmdisk(params string, writer io.Writer) {
 	ManejadorDisco.Rmdisk(*path, writer.(*bytes.Buffer))
 }
 
+// ya revisado
 func Funcion_fdisk(input string, writer io.Writer) {
 	fs := flag.NewFlagSet("fdisk", flag.ExitOnError)
 	size := fs.Int("size", 0, "Tamaño")
@@ -143,39 +145,39 @@ func Funcion_fdisk(input string, writer io.Writer) {
 		case "size", "fit", "unit", "path", "name", "type":
 			fs.Set(flagName, flagValue)
 		default:
-			fmt.Println("Error: Flag not found")
+			fmt.Println("Error: Etiqueta no encontrada")
 		}
 	}
 
 	// Validaciones
 	if *size <= 0 {
-		fmt.Println("Error: Size must be greater than 0")
+		fmt.Println("Error: El tamaño debe ser mayor a 0")
 		return
 	}
 
 	if *path == "" {
-		fmt.Println("Error: Path is required")
+		fmt.Println("Error: Path/Ruta es obligatorio")
 		return
 	}
 
 	// Si no se proporcionó un fit, usar el valor predeterminado "w"
 	if *fit == "" {
-		*fit = "w"
+		*fit = "wf"
 	}
 
 	// Validar fit (b/w/f)
 	if *fit != "bf" && *fit != "ff" && *fit != "wf" {
-		fmt.Println("Error: Fit must be 'bf', 'ff', or 'wf'")
+		fmt.Println("Error: El ajuste debe ser 'bf', 'ff', o 'wf'")
 		return
 	}
 
 	if *unit != "k" && *unit != "m" {
-		fmt.Println("Error: Unit must be 'k' or 'm'")
+		fmt.Println("Error: Las unidades deben ser 'k' o 'm'")
 		return
 	}
 
 	if *type_ != "p" && *type_ != "e" && *type_ != "l" {
-		fmt.Println("Error: Type must be 'p', 'e', or 'l'")
+		fmt.Println("Error: el tipo debe ser 'p', 'e', o 'l'")
 		return
 	}
 	ManejadorDisco.Fdisk(*size, *path, *name, *unit, *type_, *fit, writer.(*bytes.Buffer))

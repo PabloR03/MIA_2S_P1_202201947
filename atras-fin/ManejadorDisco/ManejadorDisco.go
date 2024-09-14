@@ -147,7 +147,7 @@ func Mkdisk(size int, fit string, unit string, path string, buffer *bytes.Buffer
 	nuevo_mbr.MRBSize = int32(size)
 	nuevo_mbr.MRBSignature = rand.Int31()
 	currentTime := time.Now()
-	fechaFormateada := currentTime.Format("2006-01-02")
+	fechaFormateada := currentTime.Format("02-01-2006")
 	copy(nuevo_mbr.MRBCreationDate[:], fechaFormateada)
 	copy(nuevo_mbr.MRBFit[:], fit)
 
@@ -185,35 +185,41 @@ func Rmdisk(path string, buffer *bytes.Buffer) {
 }
 
 func Fdisk(size int, path string, name string, unit string, type_ string, fit string, buffer *bytes.Buffer) {
-	fmt.Fprintf(buffer, "FDISK---------------------------------------------------------------------\n")
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=INICIO FDISK=-=-=-=-=-=-=")
 	// Validar el tamaño (size)
 	if size <= 0 {
-		fmt.Fprintf(buffer, "Error FDISK: EL tamaño de la partición debe ser mayor que 0.\n")
+		fmt.Fprintln(buffer, "Error FDISK: EL tamaño de la partición debe ser mayor que 0.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 	// Validar la unit (unit)
 	if unit != "b" && unit != "k" && unit != "m" {
-		fmt.Fprintf(buffer, "Error FDISK: La unit de tamaño debe ser Bytes, Kilobytes, Megabytes.\n")
+		fmt.Fprintln(buffer, "Error FDISK: La unit de tamaño debe ser Bytes, Kilobytes, Megabytes.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 	// Validar la path (path)
 	if path == "" {
-		fmt.Fprintf(buffer, "Error FDISK: La path del disco es obligatoria.\n")
+		fmt.Fprintln(buffer, "Error FDISK: La path del disco es obligatoria.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 	// Validar el type_ (type_)
 	if type_ != "p" && type_ != "e" && type_ != "l" {
-		fmt.Fprintf(buffer, "Error FDISK: El type_ de partición debe ser Primaria, Extendida, Lógica.\n")
+		fmt.Fprintln(buffer, "Error FDISK: El type de partición debe ser Primaria, Extendida, Lógica.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 	// Validar el fit (fit)
 	if fit != "bf" && fit != "ff" && fit != "wf" {
-		fmt.Fprintf(buffer, "Error FDISK: El fit de la partición debe ser BF, WF o FF.\n")
+		fmt.Fprintln(buffer, "Error FDISK: El fit de la partición debe ser BF, WF o FF.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 	// Validar el name (name)
 	if name == "" {
-		fmt.Fprintf(buffer, "Error FDISK: El name de la partición es obligatorio.\n")
+		fmt.Fprintln(buffer, "Error FDISK: El name de la partición es obligatorio.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 
@@ -238,6 +244,7 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 	for i := 0; i < 4; i++ {
 		if strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Name[:]), name) {
 			fmt.Fprintf(buffer, "Error FDISK: El name: %s ya está en uso en las particiones.\n", name)
+			fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 			return
 		}
 	}
@@ -259,19 +266,23 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 	}
 
 	if TotalParticiones >= 4 && type_ != "l" {
-		fmt.Fprintf(buffer, "Error FDISK: No se pueden crear más de 4 particiones primarias o extendidas en total.\n")
+		fmt.Fprintln(buffer, "Error FDISK: No se pueden crear más de 4 particiones primarias o extendidas en total.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 	if type_ == "e" && ContadorExtendida > 0 {
-		fmt.Fprintf(buffer, "Error FDISK: Solo se permite una partición extendida por disco.\n")
+		fmt.Fprintln(buffer, "Error FDISK: Solo se permite una partición extendida por disco.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 	if type_ == "l" && ContadorExtendida == 0 {
-		fmt.Fprintf(buffer, "Error FDISK: No se puede crear una partición lógica sin una partición extendida.\n")
+		fmt.Fprintln(buffer, "Error FDISK: No se puede crear una partición lógica sin una partición extendida.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 	if EspacioUtilizado+int32(size) > MBRTemporal.MRBSize {
-		fmt.Fprintf(buffer, "Error FDISK: No hay suficiente espacio en el disco para crear esta partición.\n")
+		fmt.Fprintln(buffer, "Error FDISK: No hay suficiente espacio en el disco para crear esta partición.")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 		return
 	}
 
@@ -303,7 +314,7 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 						return
 					}
 				}
-				fmt.Fprintf(buffer, "Partición creada exitosamente en la path: %s con el name: %s.\n", path, name)
+				fmt.Fprintf(buffer, "Partición creada exitosamente en la path: %s con el name: %s.", path, name)
 				break
 			}
 		}
@@ -318,7 +329,7 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 			}
 		}
 		if ParticionExtendida == nil {
-			fmt.Fprintf(buffer, "Error FDISK: No se encontró una partición extendida para crear la partición lógica.\n")
+			fmt.Fprintln(buffer, "Error FDISK: No se encontró una partición extendida para crear la partición lógica.")
 			return
 		}
 
@@ -329,7 +340,7 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 				return
 			}
 			if strings.Contains(string(EBRUltimo.EBRName[:]), name) {
-				fmt.Fprintf(buffer, "Error FDISK: El name: %s ya está en uso en las particiones.\n", name)
+				fmt.Fprintf(buffer, "Error FDISK: El name: %s ya está en uso en las particiones.", name)
 				return
 			}
 			if EBRUltimo.EBRNext == -1 {
@@ -346,7 +357,7 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 		}
 
 		if EBRNuevoPosterior+int32(size)+int32(binary.Size(Estructura.EBR{})) > ParticionExtendida.PART_Start+ParticionExtendida.PART_Size {
-			fmt.Fprintf(buffer, "Error FDISK: No hay suficiente espacio en la partición extendida para esta partición lógica.\n")
+			fmt.Fprintln(buffer, "Error FDISK: No hay suficiente espacio en la partición extendida para esta partición lógica.")
 			return
 		}
 
@@ -367,13 +378,13 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 		if err := Utilidades.WriteObject(archivo, newEBR, int64(EBRNuevoPosterior)); err != nil {
 			return
 		}
-		fmt.Fprintf(buffer, "Partición lógica creada exitosamente en la path: %s con el name: %s.\n", path, name)
+		fmt.Fprintf(buffer, "Partición lógica creada exitosamente en la path: %s con el name: %s.", path, name)
 		fmt.Println("---------------------------------------------")
 		EBRActual := ParticionExtendida.PART_Start
 		for {
 			var EBRTemp Estructura.EBR
 			if err := Utilidades.ReadObject(archivo, &EBRTemp, int64(EBRActual)); err != nil {
-				fmt.Fprintf(buffer, "Error leyendo EBR: %v\n", err)
+				fmt.Fprintf(buffer, "Error leyendo EBR: %v", err)
 				return
 			}
 			Estructura.PrintEBR(buffer, EBRTemp)
@@ -392,11 +403,12 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 		return
 	}
 	fmt.Println("---------------------------------------------")
+	Estructura.PrintMBRnormal(TempMRB)
 	Estructura.PrintMBR(buffer, TempMRB)
 	fmt.Println("---------------------------------------------")
 	defer archivo.Close()
 
-	fmt.Println("FIN FDISK=======================================")
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN FDISK=-=-=-=-=-=-=")
 	fmt.Println("")
 }
 
@@ -416,7 +428,7 @@ func Mount(path string, name string, buffer *bytes.Buffer) {
 		return
 	}
 
-	fmt.Fprintf(buffer, "Buscando partición con name: '%s'\n", name)
+	fmt.Fprintf(buffer, "Buscando partición con name: '%s'", name)
 
 	partitionFound := false
 	var partition Estructura.Partition
@@ -491,7 +503,7 @@ func Mount(path string, name string, buffer *bytes.Buffer) {
 		return
 	}
 
-	fmt.Fprintf(buffer, "Partición montada con ID: %s\n", partitionID)
+	fmt.Fprintf(buffer, "Partición montada con ID: %s", partitionID)
 
 	fmt.Println("")
 	// Imprimir el MBR actualizado

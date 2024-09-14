@@ -22,6 +22,13 @@ func PrintMBR(buffer *bytes.Buffer, data MRB) {
 		PrintPartition(buffer, data.MRBPartitions[i])
 	}
 }
+func PrintMBRnormal(data MRB) {
+	println("\nFecha de Creación: %s, Ajuste: %s, Tamaño: %d, Identificador: %d\n",
+		string(data.MRBCreationDate[:]), string(data.MRBFit[:]), data.MRBSize, data.MRBSignature)
+	for i := 0; i < 4; i++ {
+		PrintPartitionnormal(data.MRBPartitions[i])
+	}
+}
 
 //  =================================Estructura Particion=================================
 
@@ -40,6 +47,11 @@ type Partition struct {
 
 func PrintPartition(buffer *bytes.Buffer, data Partition) {
 	fmt.Fprintf(buffer, "\nNombre: %s, Tipo: %s, Inicio: %d, Tamaño: %d, Estado: %s, ID: %s, Ajuste: %s, Correlativo: %d\n",
+		string(data.PART_Name[:]), string(data.PART_Type[:]), data.PART_Start, data.PART_Size, string(data.PART_Status[:]),
+		string(data.PART_Id[:]), string(data.PART_Fit[:]), data.PART_Correlative)
+}
+func PrintPartitionnormal(data Partition) {
+	println("\nNombre: %s, Tipo: %s, Inicio: %d, Tamaño: %d, Estado: %s, ID: %s, Ajuste: %s, Correlativo: %d\n",
 		string(data.PART_Name[:]), string(data.PART_Type[:]), data.PART_Start, data.PART_Size, string(data.PART_Status[:]),
 		string(data.PART_Id[:]), string(data.PART_Fit[:]), data.PART_Correlative)
 }
