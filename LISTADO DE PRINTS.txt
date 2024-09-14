@@ -11,3 +11,7 @@
 
 # fdisk
     Estructura.PrintMBR(buffer, TempMRB)
+
+# mount
+    Estructura.PrintMBR(buffer, TempMBR)
+

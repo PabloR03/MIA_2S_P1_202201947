@@ -183,6 +183,7 @@ func Funcion_fdisk(input string, writer io.Writer) {
 	ManejadorDisco.Fdisk(*size, *path, *name, *unit, *type_, *fit, writer.(*bytes.Buffer))
 }
 
+// ya revisada
 func Funcion_mount(input string, writer io.Writer) {
 	fs := flag.NewFlagSet("mount", flag.ExitOnError)
 	path := fs.String("path", "", "Ruta")

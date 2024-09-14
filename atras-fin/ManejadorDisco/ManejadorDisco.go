@@ -414,21 +414,25 @@ func Fdisk(size int, path string, name string, unit string, type_ string, fit st
 
 // Función para montar particiones
 func Mount(path string, name string, buffer *bytes.Buffer) {
-	fmt.Fprintln(buffer, "Start MOUNT=======================================")
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=INICIO MOUNT=-=-=-=-=-=-=")
 	file, err := Utilidades.OpenFile(path)
 	if err != nil {
-		fmt.Println("Error: No se pudo abrir el archivo en la path:", path)
+		fmt.Fprintln(buffer, "Error: No se pudo abrir el archivo en la path:", path)
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MOUNT=-=-=-=-=-=-=")
 		return
 	}
 	defer file.Close()
 
 	var TempMBR Estructura.MRB
 	if err := Utilidades.ReadObject(file, &TempMBR, 0); err != nil {
-		fmt.Println("Error: No se pudo leer el MBR desde el archivo")
+		fmt.Fprint(buffer, "Error: No se pudo leer el MBR desde el archivo")
+		fmt.Fprintln(buffer, "")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MOUNT=-=-=-=-=-=-=")
 		return
 	}
 
 	fmt.Fprintf(buffer, "Buscando partición con name: '%s'", name)
+	fmt.Fprintln(buffer, "")
 
 	partitionFound := false
 	var partition Estructura.Partition
@@ -448,13 +452,17 @@ func Mount(path string, name string, buffer *bytes.Buffer) {
 	}
 
 	if !partitionFound {
-		fmt.Println("Error: Partición no encontrada o no es una partición primaria")
+		fmt.Fprintln(buffer, "Error: Partición no encontrada o no es una partición primaria")
+		fmt.Fprintln(buffer, "")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MOUNT=-=-=-=-=-=-=")
 		return
 	}
 
 	// Verificar si la partición ya está montada
 	if partition.PART_Status[0] == '1' {
-		fmt.Println("Error: La partición ya está montada")
+		fmt.Fprintf(buffer, "Error: La partición ya está montada")
+		fmt.Fprintln(buffer, "")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MOUNT=-=-=-=-=-=-=")
 		return
 	}
 
@@ -500,6 +508,7 @@ func Mount(path string, name string, buffer *bytes.Buffer) {
 	// Escribir el MBR actualizado al archivo
 	if err := Utilidades.WriteObject(file, TempMBR, 0); err != nil {
 		fmt.Println("Error: No se pudo sobrescribir el MBR en el archivo")
+		fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MOUNT=-=-=-=-=-=-=")
 		return
 	}
 
@@ -508,10 +517,19 @@ func Mount(path string, name string, buffer *bytes.Buffer) {
 	fmt.Println("")
 	// Imprimir el MBR actualizado
 	fmt.Println("MBR actualizado:")
+	Estructura.PrintMBRnormal(TempMBR)
 	Estructura.PrintMBR(buffer, TempMBR)
 	fmt.Println("")
 
 	// Imprimir las particiones montadas (solo estan mientras dure la sesion de la consola)
-	PrintMountedPartitions()
-	fmt.Fprintln(buffer, "End MOUNT=======================================")
+
+	fmt.Println("REVISION DE PARTICIONES MONTADAS")
+	fmt.Println("")
+	fmt.Println("")
+	//PrintMountedPartitions()
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println("FIN DE REVISION DE PARTICIONES MONTADAS")
+
+	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN MOUNT=-=-=-=-=-=-=")
 }
