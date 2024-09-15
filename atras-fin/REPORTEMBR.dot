@@ -2,9 +2,9 @@ digraph G {
 node [shape=plaintext];
 tabla [label=<
 <table border='1' cellborder='1' cellspacing='0'>
-<tr><td colspan='8' bgcolor='lightblue'><b>Reporte MBR Unificado</b></td></tr>
+<tr><td colspan='8' bgcolor='lightblue'><b>Reporte MBR</b></td></tr>
 <tr><td bgcolor='lightgray'><b>Tipo</b></td><td bgcolor='lightgray'><b>Estado</b></td><td bgcolor='lightgray'><b>Tipo</b></td><td bgcolor='lightgray'><b>Ajuste</b></td><td bgcolor='lightgray'><b>Inicio</b></td><td bgcolor='lightgray'><b>Tamaño</b></td><td bgcolor='lightgray'><b>Nombre</b></td><td bgcolor='lightgray'><b>Correlativo</b></td></tr>
-<tr><td bgcolor='blue'>MBR</td><td colspan='7'>Tamaño: 6291456, Fecha de Creación: 14-09-2024, Ajuste: f, Signature: 853237679</td></tr>
+<tr><td bgcolor='blue'>MBR</td><td colspan='7'>Tamaño: 6291456, Fecha de Creación: 14-09-2024, Ajuste: f, Signature: 1346438568</td></tr>
 <tr><td bgcolor='lightyellow'>Extendida</td><td>0</td><td>e</td><td>w</td><td>563</td><td>1048576</td><td>particion2</td><td>1</td></tr>
 <tr><td bgcolor='lightgreen'>EBR</td><td colspan='7'>Nombre: particion3, Ajuste: w, Inicio: 593, Tamaño: 1024, Siguiente: 1617</td></tr>
 <tr><td bgcolor='lavender'>Lógica</td><td>0</td><td>l</td><td>w</td><td>593</td><td>1024</td><td>particion3</td><td>1</td></tr>

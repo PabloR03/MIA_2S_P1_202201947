@@ -16,7 +16,7 @@ import (
 
 // YA REVISADO
 func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
-	fmt.Fprintln(writer, "=-=-=-=-=-=-=-= INCIO MKFS=-=-=-=-=-=-=-=-=")
+	fmt.Fprintln(writer, "=-=-=-=-=-=-=-= INCIO MKFS =-=-=-=-=-=-=-=-=")
 	fmt.Fprintln(writer, "Id:", id)
 	fmt.Fprintln(writer, "Type:", type_)
 	fmt.Fprintln(writer, "Fs:", fs_)
@@ -65,6 +65,7 @@ func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
 
 	// Imprimir objeto
 	Estructura.PrintMBR(writer, TempMBR)
+	Estructura.PrintMBRnormal(TempMBR)
 
 	fmt.Println("-------------")
 
@@ -81,6 +82,7 @@ func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
 
 	if index != -1 {
 		Estructura.PrintPartition(writer, TempMBR.MRBPartitions[index])
+
 	} else {
 		fmt.Fprintln(writer, "Particion no encontrada (2)")
 		return

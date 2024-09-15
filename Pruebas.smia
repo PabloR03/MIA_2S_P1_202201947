@@ -109,6 +109,7 @@ mount -path=/home/pablo03r/discosp1/Disco2.mia -name=Particion13
 
 #mount Disco2.mia -name=Particion7
 rep -id=472a -path=/home/pablo03r/discosp1/ReporteDisco2.jpg -name=disk
+rep -id=472a -path=/home/pablo03r/discosp1/ReporteDisco3.jpg -name=sb
 
 #mount Disco2.mia -name=Particion7
 -ldisk
