@@ -15,215 +15,128 @@ import (
 )
 
 // YA REVISADO
-func Mkfs(id string, type_ string, fs_ string, writer *bytes.Buffer) {
-	fmt.Fprintln(writer, "=-=-=-=-=-=-=-= INCIO MKFS =-=-=-=-=-=-=-=-=")
-	fmt.Fprintln(writer, "Id:", id)
-	fmt.Fprintln(writer, "Type:", type_)
-	fmt.Fprintln(writer, "Fs:", fs_)
-	println("Id:", id)
-	println("Type:", type_)
-	println("Fs:", fs_)
+func Mkfs(id string, type_ string, buffer *bytes.Buffer) {
+	fmt.Fprintf(buffer, "MKFS---------------------------------------------------------------------\n")
 
-	// Buscar la partición montada por ID
-	var mountedPartition ManejadorDisco.PartitionMounted
-	var partitionFound bool
+	var ParticionesMontadas ManejadorDisco.PartitionMounted
+	var ParticionEncontrada bool
 
-	for _, partitions := range ManejadorDisco.GetMountedPartitions() {
-		for _, partition := range partitions {
-			if partition.ID == id {
-				mountedPartition = partition
-				partitionFound = true
+	for _, Particiones := range ManejadorDisco.GetMountedPartitions() {
+		for _, Particion := range Particiones {
+			if Particion.ID == id {
+				ParticionesMontadas = Particion
+				ParticionEncontrada = true
 				break
 			}
 		}
-		if partitionFound {
+		if ParticionEncontrada {
 			break
 		}
 	}
 
-	if !partitionFound {
-		fmt.Fprintln(writer, "Particion no encontrada")
+	if !ParticionEncontrada {
+		fmt.Fprintf(buffer, "Error MFKS: La partición: %s no existe.\n", id)
 		return
 	}
 
-	if mountedPartition.Status != '1' { // Verifica si la partición está montada
-		fmt.Fprintln(writer, "La particion aun no esta montada")
+	if ParticionesMontadas.Status != '1' {
+		fmt.Fprintf(buffer, "Error MFKS: La partición %s aún no está montada.\n", id)
 		return
 	}
 
-	// Abrir archivo binario
-	file, err := Utilidades.OpenFile(mountedPartition.Path)
+	archivo, err := Utilidades.OpenFile(ParticionesMontadas.Path)
 	if err != nil {
 		return
 	}
 
-	var TempMBR Estructura.MRB
-	// Leer objeto desde archivo binario
-	if err := Utilidades.ReadObject(file, &TempMBR, 0); err != nil {
+	var MBRTemporal Estructura.MRB
+	if err := Utilidades.ReadObject(archivo, &MBRTemporal, 0); err != nil {
 		return
 	}
 
-	// Imprimir objeto
-	Estructura.PrintMBR(writer, TempMBR)
-	Estructura.PrintMBRnormal(TempMBR)
-
-	fmt.Println("-------------")
-
-	var index int = -1
-	// Iterar sobre las particiones para encontrar la que tiene el nombre correspondiente
+	var IndiceParticion int = -1
 	for i := 0; i < 4; i++ {
-		if TempMBR.MRBPartitions[i].PART_Size != 0 {
-			if strings.Contains(string(TempMBR.MRBPartitions[i].PART_Id[:]), id) {
-				index = i
+		if MBRTemporal.MRBPartitions[i].PART_Size != 0 {
+			if strings.Contains(string(MBRTemporal.MRBPartitions[i].PART_Id[:]), id) {
+				IndiceParticion = i
 				break
 			}
 		}
 	}
 
-	if index != -1 {
-		Estructura.PrintPartition(writer, TempMBR.MRBPartitions[index])
-
-	} else {
-		fmt.Fprintln(writer, "Particion no encontrada (2)")
+	if IndiceParticion == -1 {
+		fmt.Fprintf(buffer, "Error MFKS: La partición: %s no existe.\n", id)
 		return
 	}
 
-	numerador := int32(TempMBR.MRBPartitions[index].PART_Size - int32(binary.Size(Estructura.SuperBlock{})))
-	denominador_base := int32(4 + int32(binary.Size(Estructura.Inode{})) + 3*int32(binary.Size(Estructura.FileBlock{})))
-	var temp int32 = 0
-	if fs_ == "2fs" {
-		temp = 0
-	} else {
-		fmt.Fprintln(writer, "Error por el momento solo está disponible 2FS.")
-	}
-	denominador := denominador_base + temp
-	n := int32(numerador / denominador)
+	numerador := int32(MBRTemporal.MRBPartitions[IndiceParticion].PART_Size - int32(binary.Size(Estructura.SuperBlock{})))
+	denrominador_base := int32(4 + int32(binary.Size(Estructura.Inode{})) + 3*int32(binary.Size(Estructura.FileBlock{})))
+	denrominador := denrominador_base
+	n := int32(numerador / denrominador)
 
-	fmt.Println("INODOS:", n)
-
-	// Crear el Superblock con todos los campos calculados
-	var newSuperblock Estructura.SuperBlock
-	newSuperblock.S_Filesystem_Type = 2 // EXT2
-	newSuperblock.S_Inodes_Count = n
-	newSuperblock.S_Blocks_Count = 3 * n
-	newSuperblock.S_Free_Blocks_Count = 3*n - 2
-	newSuperblock.S_Free_Inodes_Count = n - 2
+	// Crear el Superbloque
+	var NuevoSuperBloque Estructura.SuperBlock
+	NuevoSuperBloque.S_Filesystem_Type = 2
+	NuevoSuperBloque.S_Inodes_Count = n
+	NuevoSuperBloque.S_Blocks_Count = 3 * n
+	NuevoSuperBloque.S_Free_Blocks_Count = 3*n - 2
+	NuevoSuperBloque.S_Free_Inodes_Count = n - 2
 	FechaActual := time.Now()
 	FechaString := FechaActual.Format("02-01-2006 15:04:05")
 	FechaBytes := []byte(FechaString)
-	copy(newSuperblock.S_Mtime[:], FechaBytes)
-	copy(newSuperblock.S_Umtime[:], FechaBytes)
-	newSuperblock.S_Mnt_Count = 1
-	newSuperblock.S_Magic = 0xEF53
-	newSuperblock.S_Inode_Size = int32(binary.Size(Estructura.Inode{}))
-	newSuperblock.S_Block_Size = int32(binary.Size(Estructura.FileBlock{}))
-
-	// Calcula las posiciones de inicio
-	newSuperblock.S_BM_Inode_Start = TempMBR.MRBPartitions[index].PART_Start + int32(binary.Size(Estructura.SuperBlock{}))
-	newSuperblock.S_BM_Block_Start = newSuperblock.S_BM_Inode_Start + n
-	newSuperblock.S_Inode_Start = newSuperblock.S_BM_Block_Start + 3*n
-	newSuperblock.S_Block_Start = newSuperblock.S_Inode_Start + n*newSuperblock.S_Inode_Size
-
-	if fs_ == "2fs" {
-		create_ext2(n, TempMBR.MRBPartitions[index], newSuperblock, string(FechaBytes), file, writer)
-	} else {
-		fmt.Fprintln(writer, "EXT3 no está soportado.")
-	}
-
-	// Cerrar archivo binario
-	defer file.Close()
-
-	fmt.Fprintln(writer, "=-=-=-=-=-=-=-= FIN MKFS=-=-=-=-=-=-=-=-=")
+	copy(NuevoSuperBloque.S_Mtime[:], FechaBytes)
+	copy(NuevoSuperBloque.S_Umtime[:], FechaBytes)
+	NuevoSuperBloque.S_Mnt_Count = 1
+	NuevoSuperBloque.S_Magic = 0xEF53
+	NuevoSuperBloque.S_Inode_Size = int32(binary.Size(Estructura.Inode{}))
+	NuevoSuperBloque.S_Block_Size = int32(binary.Size(Estructura.FileBlock{}))
+	// Calcular las posiciones de los bloques
+	NuevoSuperBloque.S_BM_Inode_Start = MBRTemporal.MRBPartitions[IndiceParticion].PART_Start + int32(binary.Size(Estructura.SuperBlock{}))
+	NuevoSuperBloque.S_BM_Block_Start = NuevoSuperBloque.S_BM_Inode_Start + n
+	NuevoSuperBloque.S_Inode_Start = NuevoSuperBloque.S_BM_Block_Start + 3*n
+	NuevoSuperBloque.S_Block_Start = NuevoSuperBloque.S_Inode_Start + n*int32(binary.Size(Estructura.Inode{}))
+	// Escribir el superbloque en el archivo
+	SistemaEXT2(n, MBRTemporal.MRBPartitions[IndiceParticion], NuevoSuperBloque, FechaString, archivo, buffer)
+	defer archivo.Close()
 }
 
-func create_ext2(n int32, partition Estructura.Partition, newSuperblock Estructura.SuperBlock, date string, file *os.File, writer *bytes.Buffer) {
-	fmt.Println("======Start CREATE EXT2======")
-	fmt.Println("INODOS:", n)
-
-	// Imprimir Superblock inicial
-	Estructura.PrintSuperBlock(writer, newSuperblock)
-	fmt.Println("Date:", date)
-
-	// Escribe los bitmaps de inodos y bloques en el archivo
+func SistemaEXT2(n int32, Particion Estructura.Partition, NuevoSuperBloque Estructura.SuperBlock, Fecha string, archivo *os.File, buffer *bytes.Buffer) {
 	for i := int32(0); i < n; i++ {
-		if err := Utilidades.WriteObject(file, byte(0), int64(newSuperblock.S_BM_Inode_Start+i)); err != nil {
-			fmt.Println("Error: ", err)
+		err := Utilidades.WriteObject(archivo, byte(0), int64(NuevoSuperBloque.S_BM_Inode_Start+i))
+		if err != nil {
 			return
 		}
 	}
-
 	for i := int32(0); i < 3*n; i++ {
-		if err := Utilidades.WriteObject(file, byte(0), int64(newSuperblock.S_BM_Block_Start+i)); err != nil {
-			fmt.Fprint(writer, "Error: ", err)
+		err := Utilidades.WriteObject(archivo, byte(0), int64(NuevoSuperBloque.S_BM_Block_Start+i))
+		if err != nil {
 			return
 		}
 	}
-
 	// Inicializa inodos y bloques con valores predeterminados
-	if err := initInodesAndBlocks(n, newSuperblock, file); err != nil {
+	if err := initInodesAndBlocks(n, NuevoSuperBloque, archivo); err != nil {
 		fmt.Println("Error: ", err)
 		return
 	}
-
 	// Crea la carpeta raíz y el archivo users.txt
-	if err := createRootAndUsersFile(newSuperblock, date, file); err != nil {
+	if err := createRootAndUsersFile(NuevoSuperBloque, Fecha, archivo); err != nil {
 		fmt.Println("Error: ", err)
 		return
 	}
-
 	// Escribe el superbloque actualizado al archivo
-	if err := Utilidades.WriteObject(file, newSuperblock, int64(partition.PART_Start)); err != nil {
+	if err := Utilidades.WriteObject(archivo, NuevoSuperBloque, int64(Particion.PART_Start)); err != nil {
 		fmt.Println("Error: ", err)
 		return
 	}
-
 	// Marca los primeros inodos y bloques como usados
-	if err := markUsedInodesAndBlocks(newSuperblock, file); err != nil {
+	if err := markUsedInodesAndBlocks(NuevoSuperBloque, archivo); err != nil {
 		fmt.Println("Error: ", err)
 		return
 	}
+	// Imprimir el SuperBlock final
+	Estructura.PrintSuperBlock(buffer, NuevoSuperBloque)
+	fmt.Fprintf(buffer, "Partición: %s formateada exitosamente.\n", string(Particion.PART_Name[:]))
 
-	// Leer e imprimir los inodos después de formatear
-	fmt.Fprint(writer, "====== Imprimiendo Inodos ======")
-	for i := int32(0); i < n; i++ {
-		var inode Estructura.Inode
-		offset := int64(newSuperblock.S_Inode_Start + i*int32(binary.Size(Estructura.Inode{})))
-		if err := Utilidades.ReadObject(file, &inode, offset); err != nil {
-			fmt.Println("Error al leer inodo: ", err)
-			return
-		}
-		Estructura.PrintInode(writer, inode)
-	}
-
-	// Leer e imprimir los Folderblocks y Fileblocks después de formatear
-	fmt.Println("====== Imprimiendo Folderblocks y Fileblocks ======")
-
-	// Imprimir Folderblocks
-	for i := int32(0); i < 1; i++ {
-		var folderblock Estructura.FolderBlock
-		offset := int64(newSuperblock.S_Block_Start + i*int32(binary.Size(Estructura.FolderBlock{})))
-		if err := Utilidades.ReadObject(file, &folderblock, offset); err != nil {
-			fmt.Println("Error al leer Folderblock: ", err)
-			return
-		}
-		Estructura.PrintFolderBlock(writer, folderblock)
-	}
-
-	// Imprimir Fileblocks
-	for i := int32(0); i < 1; i++ {
-		var fileblock Estructura.FileBlock
-		offset := int64(newSuperblock.S_Block_Start + int32(binary.Size(Estructura.FolderBlock{})) + i*int32(binary.Size(Estructura.FileBlock{})))
-		if err := Utilidades.ReadObject(file, &fileblock, offset); err != nil {
-			fmt.Println("Error al leer Fileblock: ", err)
-			return
-		}
-		Estructura.PrintFileBlock(writer, fileblock)
-	}
-
-	// Imprimir el Superblock final
-	Estructura.PrintSuperBlock(writer, newSuperblock)
-
-	fmt.Fprint(writer, "======End CREATE EXT2======")
 }
 
 // Función auxiliar para inicializar inodos y bloques
@@ -264,7 +177,7 @@ func createRootAndUsersFile(newSuperblock Estructura.SuperBlock, date string, fi
 	Inode1.I_Size = actualSize // Esto ahora refleja el tamaño real del contenido
 
 	var Fileblock1 Estructura.FileBlock
-	copy(Fileblock1.B_Content[:], data) // Copia segura de datos a Fileblock
+	copy(Fileblock1.B_Content[:], data) // Copia segura de datos a FileBlock
 
 	var Folderblock0 Estructura.FolderBlock
 	Folderblock0.B_Content[0].B_Inodo = 0
@@ -321,4 +234,247 @@ func markUsedInodesAndBlocks(newSuperblock Estructura.SuperBlock, file *os.File)
 		return err
 	}
 	return nil
+}
+
+func CAT(files []string, buffer *bytes.Buffer) {
+	// Check if a user is logged in
+	if !isUserLoggedIn() {
+		fmt.Fprintf(buffer, "Error: No hay un usuario logueado")
+		return
+	}
+
+	// Check if the user has permission
+	if !tienePermiso(buffer) {
+		fmt.Fprintf(buffer, "Error: El usuario no tiene permiso de lectura (permiso 777 requerido)")
+		return
+	}
+
+	// Get the mounted partition information
+	ParticionesMount := ManejadorDisco.GetMountedPartitions()
+	var filepath string
+	var id string
+
+	// Find the logged-in partition
+	for _, partitions := range ParticionesMount {
+		for _, partition := range partitions {
+			if partition.LoggedIn {
+				filepath = partition.Path
+				id = partition.ID
+				break
+			}
+		}
+		if filepath != "" {
+			break
+		}
+	}
+
+	// Open the file
+	file, err := Utilidades.OpenFile(filepath)
+	if err != nil {
+		fmt.Println("Error: No se pudo abrir el archivo:", err)
+		return
+	}
+	defer file.Close()
+
+	// Read the MBR
+	var TempMBR Estructura.MRB
+	if err := Utilidades.ReadObject(file, &TempMBR, 0); err != nil {
+		fmt.Println("Error: No se pudo leer el MBR:", err)
+		return
+	}
+
+	// Find the correct partition
+	var index int = -1
+	for i := 0; i < 4; i++ {
+		if TempMBR.MRBPartitions[i].PART_Size != 0 && strings.Contains(string(TempMBR.MRBPartitions[i].PART_Id[:]), id) {
+			if TempMBR.MRBPartitions[i].PART_Status[0] == '1' {
+				index = i
+				break
+			}
+		}
+	}
+
+	if index == -1 {
+		fmt.Println("Error: No se encontró la partición")
+		return
+	}
+
+	// Read the SuperBlock
+	var tempSuperblock Estructura.SuperBlock
+	if err := Utilidades.ReadObject(file, &tempSuperblock, int64(TempMBR.MRBPartitions[index].PART_Start)); err != nil {
+		fmt.Println("Error: No se pudo leer el SuperBlock:", err)
+		return
+	}
+
+	// Process each file in the input
+	for _, filePath := range files {
+		fmt.Printf("Imprimiendo el contenido de %s\n", filePath)
+
+		indexInode := buscarStart(filePath, file, tempSuperblock, buffer)
+		if indexInode == -1 {
+			fmt.Printf("Error: No se pudo encontrar el archivo %s\n", filePath)
+			continue
+		}
+
+		var crrInode Estructura.Inode
+		if err := Utilidades.ReadObject(file, &crrInode, int64(tempSuperblock.S_Inode_Start+indexInode*int32(binary.Size(Estructura.Inode{})))); err != nil {
+			fmt.Printf("Error: No se pudo leer el Inode para %s\n", filePath)
+			continue
+		}
+
+		// Read and print the content of each block in the file
+		for _, block := range crrInode.I_Block {
+			if block != -1 {
+				var fileblock Estructura.FileBlock
+				if err := Utilidades.ReadObject(file, &fileblock, int64(tempSuperblock.S_Block_Start+block*int32(binary.Size(Estructura.FileBlock{})))); err != nil {
+					fmt.Printf("Error: No se pudo leer el FileBlock para %s\n", filePath)
+					continue
+				}
+				Estructura.PrintFileBlock(buffer, fileblock)
+			}
+		}
+
+		fmt.Println("------FIN CAT------")
+	}
+}
+
+// Función para verificar si un usuario está logueado
+func isUserLoggedIn() bool {
+	ParticionesMount := ManejadorDisco.GetMountedPartitions()
+
+	for _, partitions := range ParticionesMount {
+		for _, partition := range partitions {
+			if partition.LoggedIn {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// Función para verificar si el usuario tiene permisos
+func tienePermiso(buffer *bytes.Buffer) bool {
+	ParticionesMount := ManejadorDisco.GetMountedPartitions()
+	var filepath string
+	var id string
+
+	for _, partitions := range ParticionesMount {
+		for _, partition := range partitions {
+			// Verifica si alguna partición tiene un usuario logueado
+			if partition.LoggedIn {
+				filepath = partition.Path
+				id = partition.ID
+				break
+			}
+		}
+	}
+
+	file, err := Utilidades.OpenFile(filepath)
+	if err != nil {
+		fmt.Println("Error: No se pudo abrir el archivo:", err)
+		return false
+	}
+	defer file.Close()
+
+	var TempMBR Estructura.MRB
+
+	if err := Utilidades.ReadObject(file, &TempMBR, 0); err != nil {
+		fmt.Println("Error: No se pudo leer el MBR:", err)
+		return false
+	}
+
+	var index int = -1
+
+	for i := 0; i < 4; i++ {
+		if TempMBR.MRBPartitions[i].PART_Size != 0 {
+			if strings.Contains(string(TempMBR.MRBPartitions[i].PART_Id[:]), id) {
+				if TempMBR.MRBPartitions[i].PART_Status[0] == '1' {
+					index = i
+				} else {
+					return false
+				}
+				break
+			}
+		}
+	}
+
+	if index == -1 {
+		return false
+	}
+
+	var tempSuperblock Estructura.SuperBlock
+	if err := Utilidades.ReadObject(file, &tempSuperblock, int64(TempMBR.MRBPartitions[index].PART_Start)); err != nil {
+		return false
+	}
+
+	indexInode := buscarStart("/user.txt", file, tempSuperblock, buffer)
+
+	var crrInode Estructura.Inode
+
+	if err := Utilidades.ReadObject(file, &crrInode, int64(tempSuperblock.S_Inode_Start+indexInode*int32(binary.Size(Estructura.Inode{})))); err != nil {
+		return false
+	}
+
+	perm := string(crrInode.I_Perm[:])
+	return strings.Contains(perm, "664")
+}
+
+// Función modificada para buscar y leer Fileblocks en lugar de Folderblocks
+func buscarStart(path string, file *os.File, tempSuperblock Estructura.SuperBlock, buffer *bytes.Buffer) int32 {
+	TempStepsPath := strings.Split(path, "/")
+	RutaPasada := TempStepsPath[1:]
+
+	var Inode0 Estructura.Inode
+	if err := Utilidades.ReadObject(file, &Inode0, int64(tempSuperblock.S_Inode_Start)); err != nil {
+		return -1
+	}
+
+	return BuscarInodoRuta(RutaPasada, Inode0, file, tempSuperblock, buffer)
+}
+
+// Cambiado para manejar FileBlock en lugar de Folderblock
+func BuscarInodoRuta(RutaPasada []string, Inode Estructura.Inode, file *os.File, tempSuperblock Estructura.SuperBlock, buffer *bytes.Buffer) int32 {
+	SearchedName := strings.Replace(pop(&RutaPasada), " ", "", -1)
+
+	for _, block := range Inode.I_Block {
+		if block != -1 {
+			if len(RutaPasada) == 0 { // Caso donde encontramos el archivo
+				var fileblock Estructura.FileBlock
+				if err := Utilidades.ReadObject(file, &fileblock, int64(tempSuperblock.S_Block_Start+block*int32(binary.Size(Estructura.FileBlock{})))); err != nil {
+					return -1
+				}
+
+				//Estructura.PrintFileblock(fileblock) // Imprime el contenido del FileBlock
+				return 1
+			} else {
+				// En este caso seguimos buscando en los bloques de carpetas
+				var crrFolderBlock Estructura.FolderBlock
+				if err := Utilidades.ReadObject(file, &crrFolderBlock, int64(tempSuperblock.S_Block_Start+block*int32(binary.Size(Estructura.FolderBlock{})))); err != nil {
+					return -1
+				}
+
+				for _, folder := range crrFolderBlock.B_Content {
+					if strings.Contains(string(folder.B_Name[:]), SearchedName) {
+						var NextInode Estructura.Inode
+						if err := Utilidades.ReadObject(file, &NextInode, int64(tempSuperblock.S_Inode_Start+folder.B_Inodo*int32(binary.Size(Estructura.Inode{})))); err != nil {
+							return -1
+						}
+
+						return BuscarInodoRuta(RutaPasada, NextInode, file, tempSuperblock, buffer)
+					}
+				}
+			}
+		}
+	}
+
+	return -1
+}
+
+// Función auxiliar para extraer el último elemento de un slice
+func pop(s *[]string) string {
+	lastIndex := len(*s) - 1
+	last := (*s)[lastIndex]
+	*s = (*s)[:lastIndex]
+	return last
 }

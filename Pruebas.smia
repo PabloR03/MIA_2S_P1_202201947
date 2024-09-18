@@ -120,3 +120,8 @@ rep -id=472a -path=/home/pablo03r/discosp1/ReporteDisco3.jpg -name=sb
 #rmdisk -path=/home/pablo03r/discosp1/Disco1.mia
 #mount Disco2.mia -name=Particion7
 #-ldisk
+
+login -user=root -pass=123 -id=472A
+
+logout 
+Logout

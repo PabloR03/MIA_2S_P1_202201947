@@ -52,8 +52,6 @@ func EliminarDiscoPorRuta(ruta string, buffer *bytes.Buffer) {
 	if _, existe := mountedPartitions[discoID]; existe {
 		delete(mountedPartitions, discoID)
 		fmt.Fprintf(buffer, "El disco con ruta '%s' y sus particiones asociadas han sido eliminados.\n", ruta)
-	} else {
-		fmt.Fprintf(buffer, "Error: No se encontró un disco con la ruta '%s'.\n", ruta)
 	}
 }
 
@@ -74,6 +72,17 @@ func MarkPartitionAsLoggedIn(id string) {
 		}
 	}
 	fmt.Printf("No se encontró la partición con ID %s para marcarla como logueada.\n", id)
+}
+
+func MarkPartitionAsLoggedOut(id string) {
+	for DiscoID, partitions := range mountedPartitions {
+		for i, Particion := range partitions {
+			if Particion.ID == id {
+				mountedPartitions[DiscoID][i].LoggedIn = false
+				return
+			}
+		}
+	}
 }
 
 // Función para obtener el ID del último disco montado
@@ -193,7 +202,7 @@ func Rmdisk(path string, buffer *bytes.Buffer) {
 
 	// ================================= Eliminar las particiones montadas asociadas al disco
 	EliminarDiscoPorRuta(path, buffer)
-	fmt.Fprintln(buffer, "Disco eliminado con éxito en la path:", path)
+	//fmt.Fprintln(buffer, "Disco eliminado con éxito en la path:", path)
 	fmt.Fprintln(buffer, "=-=-=-=-=-=-=FIN RMDISK=-=-=-=-=-=-=")
 }
 
